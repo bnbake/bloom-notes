@@ -102,8 +102,61 @@ function bloomShowDrop(root, dates, now){
 }
 
 
+/* shared by every note:
+   - an optional "tilt" attribute, e.g. -2deg or 0deg
+   - tap/click a note to open it large in the middle of the screen (set popout="off" to turn this off) */
+var BLOOM_X='<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4.5 4.8c3.8 3.2 7.2 6.8 11 10.6M15.3 4.4c-3.6 3.9-7 7.4-10.9 11.1" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>';
+var BLOOM_POP_CSS='.wrap{display:contents}:host{position:fixed!important;inset:0!important;z-index:2147483000!important;display:grid!important;place-items:center;padding:calc(env(safe-area-inset-top,0px) + 24px) 16px calc(env(safe-area-inset-bottom,0px) + 24px)!important;box-sizing:border-box}'+
+ '.pop-shade{position:fixed;inset:0;background:rgba(53,38,27,.45);opacity:0;transition:opacity .3s}'+
+ '.open .pop-shade{opacity:1}'+
+ '.pop-card{position:relative;width:min(580px,100%);max-height:100%;overflow:auto;padding-top:16px;transform:translateY(24px) scale(.92) rotate(var(--tilt,0deg));opacity:0;transition:transform .42s cubic-bezier(.2,.9,.25,1.08),opacity .25s}'+
+ '.open .pop-card{transform:none;opacity:1}'+
+ '.pop-card .note{transform:none!important;cursor:default!important;font-size:19px;box-shadow:0 30px 60px -20px rgba(53,38,27,.6)}'+
+ '.pop-card .note:hover{transform:none!important}'+
+ '.pop-close{position:absolute;top:26px;right:10px;z-index:20;width:40px;height:40px;border-radius:50%;border:2px solid #35261B;background:#FBF3D3;color:#35261B;cursor:pointer;display:grid;place-items:center;padding:0}'+
+ '.pop-close svg{width:16px;height:16px}'+
+ '.pop-close:hover{background:#E0A274}'+
+ '.pop-close:focus-visible{outline:3px solid #EC8E4C;outline-offset:2px}'+
+ '@media (prefers-reduced-motion:reduce){.pop-card,.pop-shade{transition:none}}';
+class BloomNote extends HTMLElement {
+  applyTilt(){ var t=this.getAttribute('tilt'); if(t!==null){ if(/^-?\\d+(\\.\\d+)?$/.test(t.trim())) t=t.trim()+'deg'; this.style.setProperty('--tilt', t); } }
+  initPop(){
+    var self=this, note=this.shadowRoot&&this.shadowRoot.querySelector('.note');
+    if(!note||note._bloomPop) return; note._bloomPop=true;
+    note.style.cursor='pointer'; note.setAttribute('tabindex','0'); note.setAttribute('role','button');
+    note.addEventListener('click',function(e){ if(e.target.closest('a,button')) return; self.openPop(); });
+    note.addEventListener('keydown',function(e){ if(e.target!==note) return; if(e.key==='Enter'||e.key===' '){ e.preventDefault(); self.openPop(); } });
+  }
+  openPop(){
+    if((this.getAttribute('popout')||'').toLowerCase()==='off'||this._pop) return;
+    var self=this, src=this.shadowRoot.querySelector('.note'), css=this.shadowRoot.querySelector('style').textContent;
+    var host=document.createElement('div'); host.setAttribute('data-bloom-pop','');
+    var tilt=getComputedStyle(this).getPropertyValue('--tilt'); if(tilt) host.style.setProperty('--tilt',tilt);
+    var r=host.attachShadow({mode:'open'});
+    var clone=src.cloneNode(true); clone.removeAttribute('tabindex'); clone.removeAttribute('role'); clone.style.cursor='';
+    r.innerHTML='<style>'+css+BLOOM_POP_CSS+'</style><div class="wrap"><div class="pop-shade"></div><div class="pop-card" role="dialog" aria-modal="true"><button class="pop-close" type="button" aria-label="close">'+BLOOM_X+'</button></div></div>';
+    r.querySelector('.pop-card').appendChild(clone);
+    var wrap=r.querySelector('.wrap'), prevOverflow=document.documentElement.style.overflow;
+    function close(){
+      wrap.classList.remove('open');
+      document.removeEventListener('keydown',onKey);
+      setTimeout(function(){ host.remove(); document.documentElement.style.overflow=prevOverflow; self._pop=null; try{src.focus({preventScroll:true})}catch(e){} }, 280);
+    }
+    function onKey(e){ if(e.key==='Escape') close(); }
+    r.querySelector('.pop-shade').addEventListener('click',close);
+    r.querySelector('.pop-close').addEventListener('click',close);
+    document.addEventListener('keydown',onKey);
+    document.body.appendChild(host); document.documentElement.style.overflow='hidden';
+    this._pop=host;
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){ wrap.classList.add('open'); }); });
+    try{ r.querySelector('.pop-close').focus({preventScroll:true}); }catch(e){}
+  }
+}
+
 /* ===================== bloom-letter ===================== */
-class BloomLetter extends HTMLElement {
+class BloomLetter extends BloomNote {
+  static get observedAttributes(){ return ['tilt']; }
+  attributeChangedCallback(){ this.applyTilt(); }
   connectedCallback(){
     if(this.shadowRoot) return;
     var root=this.attachShadow({mode:'open'});
@@ -157,13 +210,13 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
   <p>order by tuesday night, collect at the weekend, and if you'd rather swap than pay, we're always up for a barter.</p>
   <div class="sign">see you soon,<strong>the bloom &amp; bake crew</strong></div>
 </article>
-`;
+`; this.applyTilt(); this.initPop();
   }
 }
 if(!customElements.get('bloom-letter')) customElements.define('bloom-letter', BloomLetter);
 
 /* ===================== bloom-drops ===================== */
-class BloomDrops extends HTMLElement {
+class BloomDrops extends BloomNote {
   connectedCallback(){
     if(this.shadowRoot) return;
     var root=this.attachShadow({mode:'open'});
@@ -227,10 +280,10 @@ h2{margin-bottom:22px}
     </ul>
   </div>
 </article>
-`; this.applySpecials();
+`; this.applyTilt(); this.initPop(); this.applySpecials();
   }
-  static get observedAttributes(){ return ['specials']; }
-  attributeChangedCallback(){ this.applySpecials(); }
+  static get observedAttributes(){ return ['tilt','specials']; }
+  attributeChangedCallback(n){ if(n==='tilt'){ this.applyTilt(); return; } this.applySpecials(); }
   /* page code can send {heading, items} as JSON in the "specials" attribute */
   applySpecials(){
     var raw=this.getAttribute('specials'); if(!raw||!this.shadowRoot) return;
@@ -247,7 +300,7 @@ h2{margin-bottom:22px}
 if(!customElements.get('bloom-drops')) customElements.define('bloom-drops', BloomDrops);
 
 /* ===================== bloom-deadline ===================== */
-class BloomDeadline extends HTMLElement {
+class BloomDeadline extends BloomNote {
   connectedCallback(){
     if(this.shadowRoot) return;
     var root=this.attachShadow({mode:'open'});
@@ -318,10 +371,10 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
     <p class="lead">we're planning the next menu. the order date will be up here shortly.</p>
   </div>
 </article>
-`; this.applyDrops();
+`; this.applyTilt(); this.initPop(); this.applyDrops();
   }
-  static get observedAttributes(){ return ['drops','now']; }
-  attributeChangedCallback(){ this.applyDrops(); }
+  static get observedAttributes(){ return ['tilt','drops','now']; }
+  attributeChangedCallback(n){ if(n==='tilt'){ this.applyTilt(); return; } this.applyDrops(); }
   /* page code can send pickup dates as JSON in the "drops" attribute */
   applyDrops(){
     var raw=this.getAttribute('drops'); if(!raw||!this.shadowRoot) return;
@@ -333,7 +386,7 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
 if(!customElements.get('bloom-deadline')) customElements.define('bloom-deadline', BloomDeadline);
 
 /* ===================== bloom-crumbs ===================== */
-class BloomCrumbs extends HTMLElement {
+class BloomCrumbs extends BloomNote {
   connectedCallback(){
     if(this.shadowRoot) return;
     var root=this.attachShadow({mode:'open'});
@@ -378,17 +431,17 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
   <!-- ✏️ point this at your store menu page -->
   <p><a class="shop-link" href="https://www.bloomandbake.co/products" target="_top"><span class="t">first come, first served</span><svg class="arrow" viewBox="0 0 28 14" aria-hidden="true"><path d="M1.5 7.6c6-.9 14-.5 22.5-.4M18.5 2.2c2 1.8 4.2 3.4 6.4 5-2.3 1.3-4.6 2.9-6.6 4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
 </article>
-`; this.applyLink();
+`; this.applyTilt(); this.initPop(); this.applyLink();
   }
-  static get observedAttributes(){ return ['link']; }
-  attributeChangedCallback(){ this.applyLink(); }
+  static get observedAttributes(){ return ['tilt','link']; }
+  attributeChangedCallback(n){ if(n==='tilt'){ this.applyTilt(); return; } this.applyLink(); }
   /* optional: set a "link" attribute to change where the button goes */
   applyLink(){ var u=this.getAttribute('link'); var a=this.shadowRoot&&this.shadowRoot.querySelector('.shop-link'); if(u&&a) a.href=u; }
 }
 if(!customElements.get('bloom-crumbs')) customElements.define('bloom-crumbs', BloomCrumbs);
 
 /* ===================== bloom-barter ===================== */
-class BloomBarter extends HTMLElement {
+class BloomBarter extends BloomNote {
   connectedCallback(){
     if(this.shadowRoot) return;
     var root=this.attachShadow({mode:'open'});
@@ -452,10 +505,10 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
     <p class="address">to: the kitchen table, peckham</p>
   </div>
 </article>
-`; this.applyLink();
+`; this.applyTilt(); this.initPop(); this.applyLink();
   }
-  static get observedAttributes(){ return ['link']; }
-  attributeChangedCallback(){ this.applyLink(); }
+  static get observedAttributes(){ return ['tilt','link']; }
+  attributeChangedCallback(n){ if(n==='tilt'){ this.applyTilt(); return; } this.applyLink(); }
   /* optional: set a "link" attribute to change where the button goes */
   applyLink(){ var u=this.getAttribute('link'); var a=this.shadowRoot&&this.shadowRoot.querySelector('.shop-link'); if(u&&a) a.href=u; }
 }
