@@ -436,7 +436,7 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
   <h2>crumbs &amp; clippings</h2>
   <p>missed it? whatever is spare, bakes and flower clippings, drops wednesday.</p>
   <!-- ✏️ point this at your store menu page -->
-  <p><a class="shop-link" href="https://www.bloomandbake.co/products" target="_top"><span class="t">first come, first served</span><svg class="arrow" viewBox="0 0 28 14" aria-hidden="true"><path d="M1.5 7.6c6-.9 14-.5 22.5-.4M18.5 2.2c2 1.8 4.2 3.4 6.4 5-2.3 1.3-4.6 2.9-6.6 4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
+  <p><a class="shop-link" href="https://www.bloomandbake.co/category/all-products" target="_top"><span class="t">first come, first served</span><svg class="arrow" viewBox="0 0 28 14" aria-hidden="true"><path d="M1.5 7.6c6-.9 14-.5 22.5-.4M18.5 2.2c2 1.8 4.2 3.4 6.4 5-2.3 1.3-4.6 2.9-6.6 4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
 </article>
 `; this.applyTilt(); this.initPop(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applyLink();
   }
@@ -498,7 +498,7 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
     <p>we are open to barters and will select a few each month.</p>
     <ul class="trades"><li>handmade ceramics</li><li>a vinyl</li><li>help on drop day</li></ul>
     <!-- ✏️ point this at your barter page -->
-    <a class="shop-link" href="https://www.bloomandbake.co/propose-a-barter" target="_top"><span class="t">find out more here</span><svg class="arrow" viewBox="0 0 28 14" aria-hidden="true"><path d="M1.5 7.6c6-.9 14-.5 22.5-.4M18.5 2.2c2 1.8 4.2 3.4 6.4 5-2.3 1.3-4.6 2.9-6.6 4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+    <a class="shop-link" href="https://www.bloomandbake.co/proposeabarter" target="_top"><span class="t">find out more here</span><svg class="arrow" viewBox="0 0 28 14" aria-hidden="true"><path d="M1.5 7.6c6-.9 14-.5 22.5-.4M18.5 2.2c2 1.8 4.2 3.4 6.4 5-2.3 1.3-4.6 2.9-6.6 4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
   </div>
   <div class="side">
     <div class="stamp" aria-hidden="true">
