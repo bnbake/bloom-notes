@@ -121,8 +121,10 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
 .dear{font-family:var(--f-display);font-size:30px}
 .date + .dear,.dear + p{margin-top:0 !important}
 .sign{font-family:var(--f-script);font-size:22px;color:var(--walnut);margin-top:var(--line) !important}
-.sign strong{display:block;font-family:var(--f-display);font-weight:400;color:var(--apricot);font-size:32px}</style>
+.sign strong{display:block;font-family:var(--f-display);font-weight:400;color:var(--apricot);font-size:32px}
+.tape-lilac{background:rgba(167,139,214,.5);left:auto;right:44px;margin-left:0;transform:rotate(5deg)}</style>
 <article class="note">
+  <span class="tape tape-lilac" aria-hidden="true"></span>
   <!-- ✏️ edit the text below -->
   <p class="date">a note from the kitchen</p>
   <p class="dear">dear neighbour,</p>
