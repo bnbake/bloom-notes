@@ -6,12 +6,12 @@
      bloom-letter   bloom-drops   bloom-deadline   bloom-crumbs   bloom-barter
    Unlike an Embed HTML box, these grow and shrink with their text.
 
-   ✏️ TO CHANGE THE WORDS: edit the text inside each note's HTML below.
+   \u270f\ufe0f TO CHANGE THE WORDS: edit the text inside each note's HTML below.
       Search for the note's name (e.g. "bloom-letter") to find it.
    ===================================================================== */
 
 /* your fonts, added to the page once (Jnr for headings, Agner for text).
-   numbers, & and £ are not in them, so they fall back to Gaegu / Delius. */
+   numbers, & and \u00a3 are not in them, so they fall back to Gaegu / Delius. */
 (function addFonts(){
   if (document.getElementById('bloom-fonts')) return;
   var gf=document.createElement('link'); gf.rel='stylesheet';
@@ -27,8 +27,8 @@
    each date = the saturday of a pickup weekend ("2026-10-17" or a Date).
    orders close at 9pm on the tuesday before.
    open   : before the deadline           -> "october drop", "orders close tue 13 oct", "9:00 pm"
-   closed : deadline passed, pickup is on -> "october drop", "oct 17 and 18", sat + sun circled, "orders closed", "pick up 10–1"
-   each entry can be a date, or {date, hours, days}: hours is the pickup time, e.g. "10–1",
+   closed : deadline passed, pickup is on -> "october drop", "oct 17 and 18", sat + sun circled, "orders closed", "pick up 10\u20131"
+   each entry can be a date, or {date, hours, days}: hours is the pickup time, e.g. "10\u20131",
    days is "saturday", "sunday" or "both" (default both)
    soon   : no future pickup dates entered -> "next drop coming soon" */
 function bloomNextDrop(dates, now){
@@ -111,7 +111,7 @@ var BLOOM_POP_CSS='.wrap{display:contents}:host{pointer-events:auto!important;po
  '.open .pop-shade{opacity:1}'+
  '.pop-card{position:relative;width:min(600px,100%);max-height:100%;overflow:auto;padding:20px 20px 4px 0;box-sizing:border-box;transform:translateY(24px) scale(.92) rotate(var(--tilt,0deg));opacity:0;transition:transform .42s cubic-bezier(.2,.9,.25,1.08),opacity .25s}'+
  '.open .pop-card{transform:none;opacity:1}'+
- '.pop-card .note{max-width:none!important;transform:none!important;cursor:default!important;font-size:19px;box-shadow:0 30px 60px -20px rgba(53,38,27,.6)}'+
+ '.pop-card .string{display:none}.pop-card .note{max-width:none!important;transform:none!important;cursor:default!important;font-size:19px;box-shadow:0 30px 60px -20px rgba(53,38,27,.6)}'+
  '.pop-card .note:hover{transform:none!important}'+
  '.pop-close{position:absolute;top:0;right:0;z-index:20;width:40px;height:40px;border-radius:50%;border:2px solid #35261B;background:#FBF3D3;color:#35261B;cursor:pointer;display:grid;place-items:center;padding:0}'+
  '.pop-close svg{width:16px;height:16px}'+
@@ -128,15 +128,17 @@ class BloomNote extends HTMLElement {
     this._tilt=t;
   }
   initPop(){
-    var self=this, note=this.shadowRoot&&this.shadowRoot.querySelector('.note');
-    if(!note||note._bloomPop) return; note._bloomPop=true;
-    note.style.cursor='pointer'; note.setAttribute('tabindex','0'); note.setAttribute('role','button');
-    note.addEventListener('click',function(e){ if(e.target.closest('a,button')) return; self.openPop(); });
-    note.addEventListener('keydown',function(e){ if(e.target!==note) return; if(e.key==='Enter'||e.key===' '){ e.preventDefault(); self.openPop(); } });
+    var self=this, notes=this.shadowRoot?this.shadowRoot.querySelectorAll('.note'):[];
+    Array.prototype.forEach.call(notes,function(note){
+      if(note._bloomPop) return; note._bloomPop=true;
+      note.style.cursor='pointer'; note.setAttribute('tabindex','0'); note.setAttribute('role','button');
+      note.addEventListener('click',function(e){ if(e.target.closest('a,button')) return; self.openPop(note); });
+      note.addEventListener('keydown',function(e){ if(e.target!==note) return; if(e.key==='Enter'||e.key===' '){ e.preventDefault(); self.openPop(note); } });
+    });
   }
-  openPop(){
+  openPop(src){
     if((this.getAttribute('popout')||'').toLowerCase()==='off'||this._pop) return;
-    var self=this, src=this.shadowRoot.querySelector('.note'), css=this.shadowRoot.querySelector('style').textContent;
+    var self=this; src=src||this.shadowRoot.querySelector('.note'); var css=this.shadowRoot.querySelector('style').textContent;
     var host=document.createElement('div'); host.setAttribute('data-bloom-pop','');
     var tilt=this._tilt||getComputedStyle(src).getPropertyValue('--tilt'); if(tilt) host.style.setProperty('--tilt',tilt);
     var r=host.attachShadow({mode:'open'});
@@ -210,7 +212,7 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
 .tape-lilac{background:rgba(167,139,214,.5);left:auto;right:44px;margin-left:0;transform:rotate(5deg)}</style>
 <article class="note">
   <span class="tape tape-lilac" aria-hidden="true"></span>
-  <!-- ✏️ edit the text below -->
+  <!-- \u270f\ufe0f edit the text below -->
   <p class="date">a note from the kitchen</p>
   <p class="dear">dear neighbour,</p>
   <p>thank you for finding your way to our little corner in peckham. once a month we bake a small batch of good things and cut whatever's blooming, and we'd love for some of it to end up on your table.</p>
@@ -265,11 +267,11 @@ h2{margin-bottom:22px}
 <article class="note">
   <span class="tape" aria-hidden="true"></span>
   <h2>monthly drops</h2>
-  <!-- ✏️ edit the text below -->
+  <!-- \u270f\ufe0f edit the text below -->
   <p class="lede">our classics, flowers included, are always on the menu. each month we bake a few specials to go alongside them.</p>
   <div class="half classics">
     <h3>the classics <small>always here</small></h3>
-    <!-- ✏️ one line per classic -->
+    <!-- \u270f\ufe0f one line per classic -->
     <ul class="items">
       <li>seasonal flowers</li>
       <li>pound cake</li>
@@ -279,7 +281,7 @@ h2{margin-bottom:22px}
   </div>
   <div class="half extras" id="specials-box">
     <h3>this month's specials</h3>
-    <!-- ✏️ change these each month (or connect them to your Wix CMS, see the note at the bottom) -->
+    <!-- \u270f\ufe0f change these each month (or connect them to your Wix CMS, see the note at the bottom) -->
     <ul class="items" id="specials">
       <li><svg class="star" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 1.8l2.3 5.4 5.9.5-4.5 3.9 1.4 5.8L10 14.3l-5.1 3.1 1.4-5.8L1.8 7.7l5.9-.5z" fill="none" stroke="#EC8E4C" stroke-width="1.6" stroke-linejoin="round"/></svg>pear and ginger galette</li>
       <li><svg class="star" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 1.8l2.3 5.4 5.9.5-4.5 3.9 1.4 5.8L10 14.3l-5.1 3.1 1.4-5.8L1.8 7.7l5.9-.5z" fill="none" stroke="#EC8E4C" stroke-width="1.6" stroke-linejoin="round"/></svg>fig and honey tart</li>
@@ -358,7 +360,7 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
 .label .when{font:inherit;margin:0;white-space:nowrap}
 .stamp-closed{display:inline-block;font-family:var(--f-display);font-size:24px;line-height:1.2;color:var(--tangerine);border:2px solid var(--tangerine);border-radius:10px 14px 9px 13px;padding:2px 12px;margin:14px 0 4px!important;transform:rotate(-3deg)}</style>
 <article class="note">
-  <!-- ✏️ edit the text below. the dates fill in from your Wix CMS "Drops" collection -->
+  <!-- \u270f\ufe0f edit the text below. the dates fill in from your Wix CMS "Drops" collection -->
   <div data-view="open">
     <h2>october drop</h2>
     <div class="week" data-mark="squig" aria-hidden="true"><span>m</span><span class="tue">t</span><span>w</span><span>t</span><span>f</span><span class="squig" data-day="sat">s</span><span class="squig" data-day="sun">s</span></div>
@@ -421,9 +423,11 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
 .tape{position:absolute;top:-12px;left:50%;width:96px;height:26px;margin-left:-48px;background:rgba(236,142,76,.28);transform:rotate(-3deg)}
 @media (prefers-reduced-motion:reduce){.note{transition:none}.note:hover{transform:rotate(var(--tilt))}}
 
-:host{padding:34px 26px}
-.note{background:var(--kraft);border-radius:6px;clip-path:polygon(18% 0,82% 0,100% 12%,100% 100%,0 100%,0 12%);padding-top:46px;padding-bottom:20px;box-shadow:none;filter:drop-shadow(0 8px 10px rgba(53,38,27,.22))}
+:host{padding:66px 26px 34px}
+.note{background:transparent;isolation:isolate;padding-top:46px;padding-bottom:20px;box-shadow:none;filter:drop-shadow(0 8px 10px rgba(53,38,27,.22))}
 .note:hover{box-shadow:none}
+.note::after{content:"";position:absolute;inset:0;z-index:-1;background:var(--kraft);border-radius:6px;clip-path:polygon(18% 0,82% 0,100% 12%,100% 100%,0 100%,0 12%)}
+.string{position:absolute;top:-50px;left:50%;width:130px;height:78px;margin-left:-30px;pointer-events:none}
 .note::before{content:"";position:absolute;top:16px;left:50%;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:var(--cream);box-shadow:inset 0 1px 2px rgba(53,38,27,.35)}
 .shop-link{display:inline-flex;align-items:center;gap:8px;max-width:100%;box-sizing:border-box;margin-top:4px;font-family:var(--f-body);font-size:15px;line-height:1.3;color:var(--cocoa);text-decoration:none;background:var(--cream);border:2px solid var(--cocoa);border-radius:4px 7px 5px 6px;padding:7px 12px;transform:rotate(-1.5deg);transition:background .2s,transform .2s}
 .shop-link .t{min-width:0}
@@ -432,11 +436,12 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
 .shop-link:hover .arrow{transform:translateX(3px)}
 .shop-link:focus-visible{outline:3px solid var(--tangerine);outline-offset:3px}</style>
 <article class="note">
-  <!-- ✏️ edit the text below -->
+  <svg class="string" viewBox="0 0 130 78" aria-hidden="true"><path d="M30 73c-9-9-12-21-4-30M30 73c8-10 9-22 1-30M28 43c6-6 14-8 22-12 16-8 24-22 44-25 12-2 22 1 32 4" fill="none" stroke="#A9875F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="28.5" cy="42.5" r="2.6" fill="#A9875F"/></svg>
+  <!-- \u270f\ufe0f edit the text below -->
   <h2>crumbs &amp; clippings</h2>
   <p>missed it? whatever is spare, bakes and flower clippings, drops wednesday.</p>
-  <!-- ✏️ point this at your store menu page -->
-  <p><a class="shop-link" href="https://www.bloomandbake.co/category/all-products" target="_top"><span class="t">first come, first served</span><svg class="arrow" viewBox="0 0 28 14" aria-hidden="true"><path d="M1.5 7.6c6-.9 14-.5 22.5-.4M18.5 2.2c2 1.8 4.2 3.4 6.4 5-2.3 1.3-4.6 2.9-6.6 4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
+  <!-- \u270f\ufe0f point this at your store menu page -->
+  <p><a class="shop-link" href="https://www.bloomandbake.co/products" target="_top"><span class="t">first come, first served</span><svg class="arrow" viewBox="0 0 28 14" aria-hidden="true"><path d="M1.5 7.6c6-.9 14-.5 22.5-.4M18.5 2.2c2 1.8 4.2 3.4 6.4 5-2.3 1.3-4.6 2.9-6.6 4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
 </article>
 `; this.applyTilt(); this.initPop(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applyLink();
   }
@@ -477,6 +482,9 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
 @media (prefers-reduced-motion:reduce){.note{transition:none}.note:hover{transform:rotate(var(--tilt))}}
 
 .note{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 18px;max-width:520px}
+.tape-l,.tape-r{top:6px;width:84px;height:24px;margin-left:0}
+.tape-l{left:-22px;transform:rotate(-36deg)}
+.tape-r{left:auto;right:-22px;transform:rotate(36deg)}
 .body{min-width:0}
 .stamp{width:84px;height:100px;background:var(--cream);border:3px dotted var(--apricot);display:grid;place-items:center;transform:rotate(4deg)}
 .stamp svg{width:58px;height:58px}
@@ -492,13 +500,14 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
 .shop-link:focus-visible{outline:3px solid var(--tangerine);outline-offset:3px}
 @container (max-width:420px){.note{grid-template-columns:minmax(0,1fr)}.side{position:absolute;top:-16px;right:12px;border-left:none;padding-left:0}.stamp{width:62px;height:74px}.stamp svg{width:40px;height:40px}.address{display:none}.body{padding-right:52px}}</style>
 <article class="note">
+  <span class="tape tape-l" aria-hidden="true"></span><span class="tape tape-r" aria-hidden="true"></span>
   <div class="body">
-    <!-- ✏️ edit the text below -->
+    <!-- \u270f\ufe0f edit the text below -->
     <h2>fancy a swap?</h2>
     <p>we are open to barters and will select a few each month.</p>
     <ul class="trades"><li>handmade ceramics</li><li>a vinyl</li><li>help on drop day</li></ul>
-    <!-- ✏️ point this at your barter page -->
-    <a class="shop-link" href="https://www.bloomandbake.co/proposeabarter" target="_top"><span class="t">find out more here</span><svg class="arrow" viewBox="0 0 28 14" aria-hidden="true"><path d="M1.5 7.6c6-.9 14-.5 22.5-.4M18.5 2.2c2 1.8 4.2 3.4 6.4 5-2.3 1.3-4.6 2.9-6.6 4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+    <!-- \u270f\ufe0f point this at your barter page -->
+    <a class="shop-link" href="https://www.bloomandbake.co/propose-a-barter" target="_top"><span class="t">find out more here</span><svg class="arrow" viewBox="0 0 28 14" aria-hidden="true"><path d="M1.5 7.6c6-.9 14-.5 22.5-.4M18.5 2.2c2 1.8 4.2 3.4 6.4 5-2.3 1.3-4.6 2.9-6.6 4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
   </div>
   <div class="side">
     <div class="stamp" aria-hidden="true">
@@ -520,3 +529,482 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
   applyLink(){ var u=this.getAttribute('link'); var a=this.shadowRoot&&this.shadowRoot.querySelector('.shop-link'); if(u&&a) a.href=u; }
 }
 if(!customElements.get('bloom-barter')) customElements.define('bloom-barter', BloomBarter);
+
+/* ===================== bloom-polaroid ===================== */
+class BloomPolaroid extends BloomNote {
+  connectedCallback(){
+    if(this.shadowRoot) return;
+    var root=this.attachShadow({mode:'open'});
+    root.innerHTML = `<style>:host{
+  /* ---- fonts ---- */
+  --f-display:"Jnr","Gaegu",cursive;       /* headings */
+  --f-body:"Agner","Delius",sans-serif;       /* paragraphs */
+  --f-script:"Jnr","Gaegu",cursive;         /* little handwritten bits */
+  /* ---- colours (matched to bloomandbake.co) ---- */
+  --paper:#FFFDF6; --sticky:#FDE9B8; --kraft:#E9D3AE; --cream:#FEFCEC;
+  --apricot:#E0A274; --tangerine:#EC8E4C; --cocoa:#35261B; --walnut:#8A5A34; --rule:#EADFC4;
+  /* ---- this note's tilt: try anything from -3deg to 3deg ---- */
+  --tilt:-2deg;
+}
+*{box-sizing:border-box}
+:host{display:block;background:transparent;container-type:inline-size;pointer-events:none}.note{pointer-events:auto}
+:host{padding:28px 22px;font-family:var(--f-body);font-size:18px;line-height:1.75;letter-spacing:.03em;color:var(--cocoa)}
+.note{position:relative;background:var(--paper);padding:28px 28px 30px;border-radius:2px;
+  box-shadow:0 1px 0 rgba(53,38,27,.06),0 10px 22px -12px rgba(53,38,27,.35);
+  transform:rotate(var(--tilt));transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s}
+.note:hover{transform:rotate(calc(var(--tilt) * .3)) translateY(-5px);box-shadow:0 20px 34px -16px rgba(53,38,27,.45)}
+h2{font-family:var(--f-display);font-weight:400;font-size:clamp(28px,6cqi,36px);line-height:1.05;margin:0 0 10px;text-wrap:balance}
+p{margin:0 0 12px} p:last-child{margin-bottom:0}
+.small{font-size:13px;color:var(--walnut)}
+.tape{position:absolute;top:-12px;left:50%;width:96px;height:26px;margin-left:-48px;background:rgba(236,142,76,.28);transform:rotate(-3deg)}
+@media (prefers-reduced-motion:reduce){.note{transition:none}.note:hover{transform:rotate(var(--tilt))}}
+:host{--lilac:rgba(167,139,214,.5);--tapec:rgba(236,142,76,.28)}
+[hidden]{display:none!important}
+.tape.lilac{background:var(--lilac)}
+h2{font-size:28px!important;line-height:1.1}
+
+.note.polaroid{background:#fff;padding:14px 14px 18px;text-align:center;width:320px;max-width:100%;box-sizing:border-box;margin:0 auto}
+.polaroid .cap{height:84px;display:flex;flex-direction:column;justify-content:center;overflow:hidden}
+.polaroid img,.polaroid .ph{display:block;width:100%;aspect-ratio:1/1;object-fit:cover}
+.polaroid .ph{background:var(--cream);border:2px dashed var(--rule);display:grid;place-items:center;font-size:14px;color:var(--walnut);padding:20px;box-sizing:border-box}
+.polaroid .name{font:400 34px/1 var(--f-display);margin:0 0 4px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.polaroid .role{font-size:16px;line-height:1.3;color:var(--walnut);margin:0!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+</style>
+<figure class="note polaroid" style="margin:0 auto">
+  <span class="tape" id="tape" aria-hidden="true"></span>
+  <img id="photo" alt="" hidden>
+  <div class="ph" id="ph">add your photo link in the "photo" attribute</div>
+  <div class="cap">
+    <p class="name" id="name">name</p>
+    <p class="role" id="role">what you make</p>
+  </div>
+</figure>
+`; this.applyTilt(); this.initPop(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applyPhoto();
+  }
+  static get observedAttributes(){ return ['tilt','data-tilt','photo','name','role','tape','alt']; }
+  attributeChangedCallback(n){ if(n==='tilt'||n==='data-tilt'){ this.applyTilt(); return; } this.applyPhoto(); }
+  applyPhoto(){
+    var r=this.shadowRoot; if(!r) return;
+    var u=this.getAttribute('photo'), img=r.getElementById('photo'), ph=r.getElementById('ph');
+    if(u&&img){ img.src=u; img.hidden=false; if(ph) ph.hidden=true; }
+    var alt=this.getAttribute('alt'); if(alt!==null&&img) img.alt=alt;
+    var set=function(id,a,el){ var v=this.getAttribute(a); if(v!==null&&(el=r.getElementById(id))) el.textContent=v; }.bind(this);
+    set('name','name'); set('role','role'); set('caption','caption');
+    var tape=r.getElementById('tape'), tc=(this.getAttribute('tape')||'').toLowerCase();
+    if(tape&&tc) tape.classList.toggle('lilac', tc==='lilac'||tc==='purple');
+  }
+}
+if(!customElements.get('bloom-polaroid')) customElements.define('bloom-polaroid', BloomPolaroid);
+
+/* ===================== bloom-about ===================== */
+class BloomAbout extends BloomNote {
+  connectedCallback(){
+    if(this.shadowRoot) return;
+    var root=this.attachShadow({mode:'open'});
+    root.innerHTML = `<style>:host{
+  /* ---- fonts ---- */
+  --f-display:"Jnr","Gaegu",cursive;       /* headings */
+  --f-body:"Agner","Delius",sans-serif;       /* paragraphs */
+  --f-script:"Jnr","Gaegu",cursive;         /* little handwritten bits */
+  /* ---- colours (matched to bloomandbake.co) ---- */
+  --paper:#FFFDF6; --sticky:#FDE9B8; --kraft:#E9D3AE; --cream:#FEFCEC;
+  --apricot:#E0A274; --tangerine:#EC8E4C; --cocoa:#35261B; --walnut:#8A5A34; --rule:#EADFC4;
+  /* ---- this note's tilt: try anything from -3deg to 3deg ---- */
+  --tilt:0deg;
+}
+*{box-sizing:border-box}
+:host{display:block;background:transparent;container-type:inline-size;pointer-events:none}.note{pointer-events:auto}
+:host{padding:28px 22px;font-family:var(--f-body);font-size:18px;line-height:1.75;letter-spacing:.03em;color:var(--cocoa)}
+.note{position:relative;background:var(--paper);padding:28px 28px 30px;border-radius:2px;
+  box-shadow:0 1px 0 rgba(53,38,27,.06),0 10px 22px -12px rgba(53,38,27,.35);
+  transform:rotate(var(--tilt));transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s}
+.note:hover{transform:rotate(calc(var(--tilt) * .3)) translateY(-5px);box-shadow:0 20px 34px -16px rgba(53,38,27,.45)}
+h2{font-family:var(--f-display);font-weight:400;font-size:clamp(28px,6cqi,36px);line-height:1.05;margin:0 0 10px;text-wrap:balance}
+p{margin:0 0 12px} p:last-child{margin-bottom:0}
+.small{font-size:13px;color:var(--walnut)}
+.tape{position:absolute;top:-12px;left:50%;width:96px;height:26px;margin-left:-48px;background:rgba(236,142,76,.28);transform:rotate(-3deg)}
+@media (prefers-reduced-motion:reduce){.note{transition:none}.note:hover{transform:rotate(var(--tilt))}}
+:host{--lilac:rgba(167,139,214,.5);--tapec:rgba(236,142,76,.28)}
+[hidden]{display:none!important}
+.tape.lilac{background:var(--lilac)}
+h2{font-size:28px!important;line-height:1.1}
+.dots{margin:0;padding:0;list-style:none;font-size:16px}
+.dots li{padding-left:16px;position:relative;margin-bottom:4px}
+.dots li::before{content:"";position:absolute;left:2px;top:.75em;width:6px;height:6px;border-radius:50%;background:var(--tangerine)}
+.pill-link{display:inline-flex;align-items:center;gap:8px;max-width:100%;box-sizing:border-box;font-family:var(--f-body);font-size:15px;line-height:1.3;color:var(--cocoa);text-decoration:none;background:var(--paper);border:2px solid var(--cocoa);border-radius:4px 7px 5px 6px;padding:6px 12px;transform:rotate(-1.5deg)}
+.pill-link span{min-width:0}
+.pill-link svg{display:block;width:24px;height:12px;flex:0 0 24px;transition:transform .2s}
+.pill-link:hover{background:var(--apricot)}
+.pill-link:hover svg{transform:translateX(3px)}
+.pill-link:focus-visible{outline:3px solid var(--tangerine);outline-offset:3px}
+
+.postits{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:30px 28px;align-items:stretch}
+.note.postit{background:var(--pi);padding:22px 22px 26px;border-radius:1px 1px 3px 14px/1px 1px 3px 6px;box-shadow:0 1px 0 rgba(53,38,27,.05),6px 12px 18px -14px rgba(53,38,27,.45)}
+.postit h2{margin-bottom:8px!important}
+.postit p{font-size:16px}
+.postit .dots{margin-bottom:12px}
+@container (max-width:760px){.postits{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@container (max-width:480px){.postits{grid-template-columns:minmax(0,1fr)}}
+</style>
+<div class="postits">
+  <!-- \u270f\ufe0f edit the text below. change a note's colour with --pi -->
+  <article class="note postit" style="--pi:#FDE9B8;--tilt:-1deg">
+    <h2>who</h2>
+    <p>junior is a singer songwriter from hackney. aigner is a multidisciplinary artist from brooklyn, cosplaying as a tech bro.</p>
+  </article>
+  <article class="note postit" style="--pi:#FAD9C4;--tilt:.8deg">
+    <h2>what</h2>
+    <p>a monthly drop of baked goods and floral arrangements. all made from scratch, with care.</p>
+  </article>
+  <article class="note postit" style="--pi:#E7DDF4;--tilt:-.6deg">
+    <h2>why</h2>
+    <p>we love the simple things. for us, a little treat or a bunch of flowers can turn a day around. aigner is always baking. junior is always arranging flowers.</p>
+    <p>bloom and bake came about naturally, out of things we already love.</p>
+  </article>
+  <article class="note postit" style="--pi:#DFE8D2;--tilt:1deg">
+    <h2>where &amp; when</h2>
+    <p>peckham rye.</p>
+    <p>once a month. weekend pickup, order by the thursday before.</p>
+  </article>
+  <article class="note postit" style="--pi:#F7DCDD;--tilt:-.8deg">
+    <h2>barters</h2>
+    <p>we don't want price to be a barrier, so we're always open to trading. some ideas:</p>
+    <ul class="dots"><li>a pottery or ceramics lesson</li><li>handmade plates, vases, mugs (anything for the table)</li><li>kitchen time</li></ul>
+    <a class="pill-link" href="https://www.bloomandbake.co/propose-a-barter" target="_top"><span>how barters work</span><svg viewBox="0 0 28 14" aria-hidden="true"><path d="M1.5 7.6c6-.9 14-.5 22.5-.4M18.5 2.2c2 1.8 4.2 3.4 6.4 5-2.3 1.3-4.6 2.9-6.6 4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+  </article>
+  <article class="note postit" style="--pi:#FDE9B8;--tilt:.6deg">
+    <h2>collabs</h2>
+    <p>we recently did the florals for a wedding in chicago, and we're always up for more of that. got an idea? hit us up.</p>
+  </article>
+</div>
+`; this.applyTilt(); this.initPop(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applyLink();
+  }
+  static get observedAttributes(){ return ['tilt','data-tilt','link']; }
+  attributeChangedCallback(n){ if(n==='tilt'||n==='data-tilt'){ this.applyTilt(); return; } this.applyLink(); }
+  applyLink(){ var u=this.getAttribute('link'); var a=this.shadowRoot&&this.shadowRoot.querySelector('.pill-link'); if(u&&a) a.href=u; }
+}
+if(!customElements.get('bloom-about')) customElements.define('bloom-about', BloomAbout);
+
+/* ===================== bloom-ps ===================== */
+class BloomPs extends BloomNote {
+  connectedCallback(){
+    if(this.shadowRoot) return;
+    var root=this.attachShadow({mode:'open'});
+    root.innerHTML = `<style>:host{
+  /* ---- fonts ---- */
+  --f-display:"Jnr","Gaegu",cursive;       /* headings */
+  --f-body:"Agner","Delius",sans-serif;       /* paragraphs */
+  --f-script:"Jnr","Gaegu",cursive;         /* little handwritten bits */
+  /* ---- colours (matched to bloomandbake.co) ---- */
+  --paper:#FFFDF6; --sticky:#FDE9B8; --kraft:#E9D3AE; --cream:#FEFCEC;
+  --apricot:#E0A274; --tangerine:#EC8E4C; --cocoa:#35261B; --walnut:#8A5A34; --rule:#EADFC4;
+  /* ---- this note's tilt: try anything from -3deg to 3deg ---- */
+  --tilt:-.6deg;
+}
+*{box-sizing:border-box}
+:host{display:block;background:transparent;container-type:inline-size;pointer-events:none}.note{pointer-events:auto}
+:host{padding:28px 22px;font-family:var(--f-body);font-size:18px;line-height:1.75;letter-spacing:.03em;color:var(--cocoa)}
+.note{position:relative;background:var(--paper);padding:28px 28px 30px;border-radius:2px;
+  box-shadow:0 1px 0 rgba(53,38,27,.06),0 10px 22px -12px rgba(53,38,27,.35);
+  transform:rotate(var(--tilt));transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s}
+.note:hover{transform:rotate(calc(var(--tilt) * .3)) translateY(-5px);box-shadow:0 20px 34px -16px rgba(53,38,27,.45)}
+h2{font-family:var(--f-display);font-weight:400;font-size:clamp(28px,6cqi,36px);line-height:1.05;margin:0 0 10px;text-wrap:balance}
+p{margin:0 0 12px} p:last-child{margin-bottom:0}
+.small{font-size:13px;color:var(--walnut)}
+.tape{position:absolute;top:-12px;left:50%;width:96px;height:26px;margin-left:-48px;background:rgba(236,142,76,.28);transform:rotate(-3deg)}
+@media (prefers-reduced-motion:reduce){.note{transition:none}.note:hover{transform:rotate(var(--tilt))}}
+:host{--lilac:rgba(167,139,214,.5);--tapec:rgba(236,142,76,.28)}
+[hidden]{display:none!important}
+.tape.lilac{background:var(--lilac)}
+h2{font-size:28px!important;line-height:1.1}
+.banner-wrap{position:relative;max-width:900px;margin:0 auto;transform:rotate(var(--tilt));filter:drop-shadow(0 8px 10px rgba(53,38,27,.18))}
+.banner-wrap .corner-tl,.banner-wrap .corner-tr{top:2px;width:86px;height:24px;margin-left:0}
+.banner-wrap .corner-tl{left:-20px;transform:rotate(-34deg)}
+.banner-wrap .corner-tr{left:auto;right:-20px;transform:rotate(34deg)}
+.banner{position:relative;background:var(--paper);padding:24px clamp(30px,6cqi,72px);clip-path:polygon(0 6%,3% 0,97% 4%,100% 0,99% 52%,100% 100%,96% 94%,4% 100%,0 96%,1% 48%)}
+.banner p{font-family:var(--f-body);font-size:clamp(16px,2.2cqi,20px);line-height:1.6;margin:0;text-align:center}
+.banner .sub{margin-top:8px!important;font-size:clamp(14px,1.9cqi,17px);color:var(--walnut)}
+.ps-mark{font-family:var(--f-display);font-size:1.4em;color:var(--tangerine);margin-right:6px}
+</style>
+<aside class="banner-wrap">
+  <div class="banner">
+    <!-- \u270f\ufe0f edit the text below -->
+    <p><span class="ps-mark">p.s.</span> eventually we'd love a dedicated space. part art space, part flower shop, part cafe. that's what we're building towards.</p>
+  </div>
+  <span class="tape corner-tl" aria-hidden="true"></span>
+  <span class="tape lilac corner-tr" aria-hidden="true"></span>
+</aside>
+`; this.applyTilt(); this.initPop(); var me=this; setTimeout(function(){me.applyTilt()},300);
+  }
+}
+if(!customElements.get('bloom-ps')) customElements.define('bloom-ps', BloomPs);
+
+/* ===================== bloom-barter-intro ===================== */
+class BloomBarterIntro extends BloomNote {
+  connectedCallback(){
+    if(this.shadowRoot) return;
+    var root=this.attachShadow({mode:'open'});
+    root.innerHTML = `<style>:host{
+  /* ---- fonts ---- */
+  --f-display:"Jnr","Gaegu",cursive;       /* headings */
+  --f-body:"Agner","Delius",sans-serif;       /* paragraphs */
+  --f-script:"Jnr","Gaegu",cursive;         /* little handwritten bits */
+  /* ---- colours (matched to bloomandbake.co) ---- */
+  --paper:#FFFDF6; --sticky:#FDE9B8; --kraft:#E9D3AE; --cream:#FEFCEC;
+  --apricot:#E0A274; --tangerine:#EC8E4C; --cocoa:#35261B; --walnut:#8A5A34; --rule:#EADFC4;
+  /* ---- this note's tilt: try anything from -3deg to 3deg ---- */
+  --tilt:.5deg;
+}
+*{box-sizing:border-box}
+:host{display:block;background:transparent;container-type:inline-size;pointer-events:none}.note{pointer-events:auto}
+:host{padding:28px 22px;font-family:var(--f-body);font-size:18px;line-height:1.75;letter-spacing:.03em;color:var(--cocoa)}
+.note{position:relative;background:var(--paper);padding:28px 28px 30px;border-radius:2px;
+  box-shadow:0 1px 0 rgba(53,38,27,.06),0 10px 22px -12px rgba(53,38,27,.35);
+  transform:rotate(var(--tilt));transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s}
+.note:hover{transform:rotate(calc(var(--tilt) * .3)) translateY(-5px);box-shadow:0 20px 34px -16px rgba(53,38,27,.45)}
+h2{font-family:var(--f-display);font-weight:400;font-size:clamp(28px,6cqi,36px);line-height:1.05;margin:0 0 10px;text-wrap:balance}
+p{margin:0 0 12px} p:last-child{margin-bottom:0}
+.small{font-size:13px;color:var(--walnut)}
+.tape{position:absolute;top:-12px;left:50%;width:96px;height:26px;margin-left:-48px;background:rgba(236,142,76,.28);transform:rotate(-3deg)}
+@media (prefers-reduced-motion:reduce){.note{transition:none}.note:hover{transform:rotate(var(--tilt))}}
+:host{--lilac:rgba(167,139,214,.5);--tapec:rgba(236,142,76,.28)}
+[hidden]{display:none!important}
+.tape.lilac{background:var(--lilac)}
+h2{font-size:28px!important;line-height:1.1}
+.banner-wrap{position:relative;max-width:900px;margin:0 auto;transform:rotate(var(--tilt));filter:drop-shadow(0 8px 10px rgba(53,38,27,.18))}
+.banner-wrap .corner-tl,.banner-wrap .corner-tr{top:2px;width:86px;height:24px;margin-left:0}
+.banner-wrap .corner-tl{left:-20px;transform:rotate(-34deg)}
+.banner-wrap .corner-tr{left:auto;right:-20px;transform:rotate(34deg)}
+.banner{position:relative;background:var(--paper);padding:24px clamp(30px,6cqi,72px);clip-path:polygon(0 6%,3% 0,97% 4%,100% 0,99% 52%,100% 100%,96% 94%,4% 100%,0 96%,1% 48%)}
+.banner p{font-family:var(--f-body);font-size:clamp(16px,2.2cqi,20px);line-height:1.6;margin:0;text-align:center}
+.banner .sub{margin-top:8px!important;font-size:clamp(14px,1.9cqi,17px);color:var(--walnut)}
+.ps-mark{font-family:var(--f-display);font-size:1.4em;color:var(--tangerine);margin-right:6px}
+</style>
+<aside class="banner-wrap">
+  <div class="banner">
+    <!-- \u270f\ufe0f edit the text below -->
+    <p>we don't want price to be a barrier. if you've got something to trade, we're listening. we especially love handmade goods, a lesson and art.</p>
+    <p class="sub">we're also new to this! here's roughly how we're thinking about it, but we're open to ideas.</p>
+  </div>
+  <span class="tape corner-tl" aria-hidden="true"></span>
+  <span class="tape lilac corner-tr" aria-hidden="true"></span>
+</aside>
+`; this.applyTilt(); this.initPop(); var me=this; setTimeout(function(){me.applyTilt()},300);
+  }
+}
+if(!customElements.get('bloom-barter-intro')) customElements.define('bloom-barter-intro', BloomBarterIntro);
+
+/* ===================== bloom-tiers ===================== */
+class BloomTiers extends BloomNote {
+  connectedCallback(){
+    if(this.shadowRoot) return;
+    var root=this.attachShadow({mode:'open'});
+    root.innerHTML = `<style>:host{
+  /* ---- fonts ---- */
+  --f-display:"Jnr","Gaegu",cursive;       /* headings */
+  --f-body:"Agner","Delius",sans-serif;       /* paragraphs */
+  --f-script:"Jnr","Gaegu",cursive;         /* little handwritten bits */
+  /* ---- colours (matched to bloomandbake.co) ---- */
+  --paper:#FFFDF6; --sticky:#FDE9B8; --kraft:#E9D3AE; --cream:#FEFCEC;
+  --apricot:#E0A274; --tangerine:#EC8E4C; --cocoa:#35261B; --walnut:#8A5A34; --rule:#EADFC4;
+  /* ---- this note's tilt: try anything from -3deg to 3deg ---- */
+  --tilt:0deg;
+}
+*{box-sizing:border-box}
+:host{display:block;background:transparent;container-type:inline-size;pointer-events:none}.note{pointer-events:auto}
+:host{padding:28px 22px;font-family:var(--f-body);font-size:18px;line-height:1.75;letter-spacing:.03em;color:var(--cocoa)}
+.note{position:relative;background:var(--paper);padding:28px 28px 30px;border-radius:2px;
+  box-shadow:0 1px 0 rgba(53,38,27,.06),0 10px 22px -12px rgba(53,38,27,.35);
+  transform:rotate(var(--tilt));transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s}
+.note:hover{transform:rotate(calc(var(--tilt) * .3)) translateY(-5px);box-shadow:0 20px 34px -16px rgba(53,38,27,.45)}
+h2{font-family:var(--f-display);font-weight:400;font-size:clamp(28px,6cqi,36px);line-height:1.05;margin:0 0 10px;text-wrap:balance}
+p{margin:0 0 12px} p:last-child{margin-bottom:0}
+.small{font-size:13px;color:var(--walnut)}
+.tape{position:absolute;top:-12px;left:50%;width:96px;height:26px;margin-left:-48px;background:rgba(236,142,76,.28);transform:rotate(-3deg)}
+@media (prefers-reduced-motion:reduce){.note{transition:none}.note:hover{transform:rotate(var(--tilt))}}
+:host{--lilac:rgba(167,139,214,.5);--tapec:rgba(236,142,76,.28)}
+[hidden]{display:none!important}
+.tape.lilac{background:var(--lilac)}
+h2{font-size:28px!important;line-height:1.1}
+
+:host{padding-top:70px!important}
+.tiers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:64px 26px;align-items:start}
+.note.tag{background:transparent;isolation:isolate;padding:46px 22px 22px;box-shadow:none;filter:drop-shadow(0 8px 10px rgba(53,38,27,.22))}
+.note.tag:hover{box-shadow:none}
+.tag::after{content:"";position:absolute;inset:0;z-index:-1;background:var(--kraft);border-radius:6px;clip-path:polygon(18% 0,82% 0,100% 10%,100% 100%,0 100%,0 10%)}
+.tag::before{content:"";position:absolute;top:16px;left:50%;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:var(--cream);box-shadow:inset 0 1px 2px rgba(53,38,27,.35)}
+.string{position:absolute;top:-50px;left:50%;width:130px;height:78px;margin-left:-30px;pointer-events:none}
+.tag h2{text-align:center}
+.gets-line{font-size:16px;text-align:center;margin:0 0 4px!important;text-wrap:balance}
+.label{font:400 19px/1.2 var(--f-display);color:var(--walnut);margin:16px 0 4px!important}
+.swaps{margin:0;padding:0;list-style:none;font-family:var(--f-body);font-size:15px;line-height:1.5}
+.swaps li{padding:6px 0 6px 18px;position:relative;border-top:1.5px dashed rgba(138,90,52,.3)}
+.swaps li:first-child{border-top:none}
+.swaps li::before{content:"";position:absolute;left:2px;top:14px;width:7px;height:7px;border-radius:50%;background:var(--tangerine)}
+@container (max-width:760px){.tiers{grid-template-columns:minmax(0,1fr)}.note.tag{max-width:440px;width:100%;margin:0 auto}}
+</style>
+<div class="tiers">
+  <!-- \u270f\ufe0f edit the text below -->
+  <article class="note tag" style="--tilt:-2deg">
+    <svg class="string" viewBox="0 0 130 78" aria-hidden="true"><path d="M30 73c-9-9-12-21-4-30M30 73c8-10 9-22 1-30M28 43c6-6 14-8 22-12 16-8 24-22 44-25 12-2 22 1 32 4" fill="none" stroke="#A9875F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="28.5" cy="42.5" r="2.6" fill="#A9875F"/></svg>
+    <h2>for a single item</h2>
+    <p class="gets-line">a slice, a cinnamon roll, a box of shortbread or a small bouquet</p>
+    <p class="label">swap ideas</p>
+    <ul class="swaps"><li>something small and handmade, like a mug</li><li>a record or cd you're willing to part with (we love jazz, r&amp;b, soul)</li><li>a short intro lesson in something you know</li></ul>
+  </article>
+  <article class="note tag" style="--tilt:1.2deg">
+    <svg class="string" viewBox="0 0 130 78" aria-hidden="true"><path d="M30 73c-9-9-12-21-4-30M30 73c8-10 9-22 1-30M28 43c6-6 14-8 22-12 16-8 24-22 44-25 12-2 22 1 32 4" fill="none" stroke="#A9875F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="28.5" cy="42.5" r="2.6" fill="#A9875F"/></svg>
+    <h2>for a package</h2>
+    <p class="gets-line">sweet thing, sunday morning or real love</p>
+    <p class="label">swap ideas</p>
+    <ul class="swaps"><li>a proper lesson: pilates, training, pottery, swimming, gardening</li><li>a nice vase</li><li>help with social media content</li></ul>
+  </article>
+  <article class="note tag" style="--tilt:-1deg">
+    <svg class="string" viewBox="0 0 130 78" aria-hidden="true"><path d="M30 73c-9-9-12-21-4-30M30 73c8-10 9-22 1-30M28 43c6-6 14-8 22-12 16-8 24-22 44-25 12-2 22 1 32 4" fill="none" stroke="#A9875F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="28.5" cy="42.5" r="2.6" fill="#A9875F"/></svg>
+    <h2>for something bigger</h2>
+    <p class="gets-line">a whole cake, a whole quiche, a loaf or flowers for an event</p>
+    <p class="label">swap ideas</p>
+    <ul class="swaps"><li>2\u20133 lessons of something you're good at</li><li>studio space or time</li><li>artwork</li></ul>
+  </article>
+</div>
+`; this.applyTilt(); this.initPop(); var me=this; setTimeout(function(){me.applyTilt()},300);
+  }
+}
+if(!customElements.get('bloom-tiers')) customElements.define('bloom-tiers', BloomTiers);
+
+/* ===================== bloom-howto ===================== */
+class BloomHowto extends BloomNote {
+  connectedCallback(){
+    if(this.shadowRoot) return;
+    var root=this.attachShadow({mode:'open'});
+    root.innerHTML = `<style>:host{
+  /* ---- fonts ---- */
+  --f-display:"Jnr","Gaegu",cursive;       /* headings */
+  --f-body:"Agner","Delius",sans-serif;       /* paragraphs */
+  --f-script:"Jnr","Gaegu",cursive;         /* little handwritten bits */
+  /* ---- colours (matched to bloomandbake.co) ---- */
+  --paper:#FFFDF6; --sticky:#FDE9B8; --kraft:#E9D3AE; --cream:#FEFCEC;
+  --apricot:#E0A274; --tangerine:#EC8E4C; --cocoa:#35261B; --walnut:#8A5A34; --rule:#EADFC4;
+  /* ---- this note's tilt: try anything from -3deg to 3deg ---- */
+  --tilt:-.6deg;
+}
+*{box-sizing:border-box}
+:host{display:block;background:transparent;container-type:inline-size;pointer-events:none}.note{pointer-events:auto}
+:host{padding:28px 22px;font-family:var(--f-body);font-size:18px;line-height:1.75;letter-spacing:.03em;color:var(--cocoa)}
+.note{position:relative;background:var(--paper);padding:28px 28px 30px;border-radius:2px;
+  box-shadow:0 1px 0 rgba(53,38,27,.06),0 10px 22px -12px rgba(53,38,27,.35);
+  transform:rotate(var(--tilt));transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s}
+.note:hover{transform:rotate(calc(var(--tilt) * .3)) translateY(-5px);box-shadow:0 20px 34px -16px rgba(53,38,27,.45)}
+h2{font-family:var(--f-display);font-weight:400;font-size:clamp(28px,6cqi,36px);line-height:1.05;margin:0 0 10px;text-wrap:balance}
+p{margin:0 0 12px} p:last-child{margin-bottom:0}
+.small{font-size:13px;color:var(--walnut)}
+.tape{position:absolute;top:-12px;left:50%;width:96px;height:26px;margin-left:-48px;background:rgba(236,142,76,.28);transform:rotate(-3deg)}
+@media (prefers-reduced-motion:reduce){.note{transition:none}.note:hover{transform:rotate(var(--tilt))}}
+:host{--lilac:rgba(167,139,214,.5);--tapec:rgba(236,142,76,.28)}
+[hidden]{display:none!important}
+.tape.lilac{background:var(--lilac)}
+h2{font-size:28px!important;line-height:1.1}
+
+.howto{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,.9fr);gap:36px;align-items:start}
+.note.recipe{padding:24px 28px 30px;background-image:linear-gradient(var(--tangerine),var(--tangerine)),linear-gradient(transparent 31px,var(--rule) 31px);background-size:100% 2px,100% 32px;background-repeat:no-repeat,repeat;background-position:0 74px,0 84px}
+.recipe h2{margin-bottom:26px!important}
+.steps{margin:0;padding:0;list-style:none;counter-reset:s}
+.steps li{counter-increment:s;display:grid;grid-template-columns:30px minmax(0,1fr);line-height:32px;font-family:var(--f-body);font-size:16px}
+.steps li::before{content:counter(s);font:700 17px/32px var(--f-body);color:var(--tangerine)}
+.note.shot{background:#fff;padding:10px 10px 14px;margin:10px auto 0;max-width:360px;width:100%}
+.shot img,.shot .ph{display:block;width:100%;height:auto}
+.shot .ph{aspect-ratio:3/2;background:var(--cream);border:2px dashed var(--rule);display:grid;place-items:center;font-size:14px;color:var(--walnut);padding:16px;box-sizing:border-box;text-align:center}
+.shot figcaption{font:400 17px/1.2 var(--f-display);color:var(--walnut);margin-top:8px;text-align:center}
+@container (max-width:700px){.howto{grid-template-columns:minmax(0,1fr)}}
+</style>
+<div class="howto">
+  <!-- \u270f\ufe0f edit the text below -->
+  <article class="note recipe">
+    <span class="tape" aria-hidden="true"></span>
+    <h2>how it works</h2>
+    <ol class="steps">
+      <li><span>add your items to your cart as normal</span></li>
+      <li><span>view cart and select "propose a barter"</span></li>
+      <li><span>write in what you'd like to trade</span></li>
+      <li><span>go to checkout, pick your delivery day and select "manual payment"</span></li>
+      <li><span>place your order before the cutoff</span></li>
+      <li><span>we'll review and get back to you with confirmation</span></li>
+    </ol>
+  </article>
+  <figure class="note shot" style="--tilt:2.2deg">
+    <span class="tape lilac" aria-hidden="true"></span>
+    <img id="photo" alt="your cart, showing the box to write in your proposed trade" hidden>
+    <div class="ph" id="ph">add your screenshot link in the "photo" attribute</div>
+    <figcaption id="caption">write your trade here</figcaption>
+  </figure>
+</div>
+`; this.applyTilt(); this.initPop(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applyPhoto();
+  }
+  static get observedAttributes(){ return ['tilt','data-tilt','photo','caption','alt']; }
+  attributeChangedCallback(n){ if(n==='tilt'||n==='data-tilt'){ this.applyTilt(); return; } this.applyPhoto(); }
+  applyPhoto(){
+    var r=this.shadowRoot; if(!r) return;
+    var u=this.getAttribute('photo'), img=r.getElementById('photo'), ph=r.getElementById('ph');
+    if(u&&img){ img.src=u; img.hidden=false; if(ph) ph.hidden=true; }
+    var alt=this.getAttribute('alt'); if(alt!==null&&img) img.alt=alt;
+    var set=function(id,a,el){ var v=this.getAttribute(a); if(v!==null&&(el=r.getElementById(id))) el.textContent=v; }.bind(this);
+    set('name','name'); set('role','role'); set('caption','caption');
+    var tape=r.getElementById('tape'), tc=(this.getAttribute('tape')||'').toLowerCase();
+    if(tape&&tc) tape.classList.toggle('lilac', tc==='lilac'||tc==='purple');
+  }
+}
+if(!customElements.get('bloom-howto')) customElements.define('bloom-howto', BloomHowto);
+
+/* ===================== bloom-good-to-know ===================== */
+class BloomGoodToKnow extends BloomNote {
+  connectedCallback(){
+    if(this.shadowRoot) return;
+    var root=this.attachShadow({mode:'open'});
+    root.innerHTML = `<style>:host{
+  /* ---- fonts ---- */
+  --f-display:"Jnr","Gaegu",cursive;       /* headings */
+  --f-body:"Agner","Delius",sans-serif;       /* paragraphs */
+  --f-script:"Jnr","Gaegu",cursive;         /* little handwritten bits */
+  /* ---- colours (matched to bloomandbake.co) ---- */
+  --paper:#FFFDF6; --sticky:#FDE9B8; --kraft:#E9D3AE; --cream:#FEFCEC;
+  --apricot:#E0A274; --tangerine:#EC8E4C; --cocoa:#35261B; --walnut:#8A5A34; --rule:#EADFC4;
+  /* ---- this note's tilt: try anything from -3deg to 3deg ---- */
+  --tilt:1deg;
+}
+*{box-sizing:border-box}
+:host{display:block;background:transparent;container-type:inline-size;pointer-events:none}.note{pointer-events:auto}
+:host{padding:28px 22px;font-family:var(--f-body);font-size:18px;line-height:1.75;letter-spacing:.03em;color:var(--cocoa)}
+.note{position:relative;background:var(--paper);padding:28px 28px 30px;border-radius:2px;
+  box-shadow:0 1px 0 rgba(53,38,27,.06),0 10px 22px -12px rgba(53,38,27,.35);
+  transform:rotate(var(--tilt));transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s}
+.note:hover{transform:rotate(calc(var(--tilt) * .3)) translateY(-5px);box-shadow:0 20px 34px -16px rgba(53,38,27,.45)}
+h2{font-family:var(--f-display);font-weight:400;font-size:clamp(28px,6cqi,36px);line-height:1.05;margin:0 0 10px;text-wrap:balance}
+p{margin:0 0 12px} p:last-child{margin-bottom:0}
+.small{font-size:13px;color:var(--walnut)}
+.tape{position:absolute;top:-12px;left:50%;width:96px;height:26px;margin-left:-48px;background:rgba(236,142,76,.28);transform:rotate(-3deg)}
+@media (prefers-reduced-motion:reduce){.note{transition:none}.note:hover{transform:rotate(var(--tilt))}}
+:host{--lilac:rgba(167,139,214,.5);--tapec:rgba(236,142,76,.28)}
+[hidden]{display:none!important}
+.tape.lilac{background:var(--lilac)}
+h2{font-size:28px!important;line-height:1.1}
+.dots{margin:0;padding:0;list-style:none;font-size:16px}
+.dots li{padding-left:16px;position:relative;margin-bottom:4px}
+.dots li::before{content:"";position:absolute;left:2px;top:.75em;width:6px;height:6px;border-radius:50%;background:var(--tangerine)}
+
+.note.sticky{background:var(--sticky);max-width:720px;margin:0 auto}
+.sticky h2{margin-bottom:10px!important}
+</style>
+<article class="note sticky">
+  <!-- \u270f\ufe0f edit the text below -->
+  <h2>good to know</h2>
+  <ul class="dots">
+    <li>your order isn't confirmed until we've agreed to a trade</li>
+    <li>we can't say yes to everything, but we'll always try to work with you</li>
+    <li>item trades are swapped at pickup unless we've agreed otherwise. for lessons or services, we'll sort the timing between us</li>
+    <li>we're also open to trades for a multi-month subscription!</li>
+  </ul>
+</article>
+`; this.applyTilt(); this.initPop(); var me=this; setTimeout(function(){me.applyTilt()},300);
+  }
+}
+if(!customElements.get('bloom-good-to-know')) customElements.define('bloom-good-to-know', BloomGoodToKnow);
