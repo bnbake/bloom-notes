@@ -26,8 +26,8 @@
 /* works out what the deadline note should say from a list of pickup dates.
    each date = the saturday of a pickup weekend ("2026-10-17" or a Date).
    orders close at 9pm on the tuesday before.
-   open   : before the deadline           -> "order by tuesday 13 october, 9:00 pm"
-   closed : deadline passed, pickup is on -> "orders closed", sat + sun circled, "pick up 10–1"
+   open   : before the deadline           -> "october drop", "orders close tue 13 oct", "9:00 pm"
+   closed : deadline passed, pickup is on -> "october drop", "oct 17 and 18", sat + sun circled, "orders closed", "pick up 10–1"
    each entry can be a date, or {date, hours, days}: hours is the pickup time, e.g. "10–1",
    days is "saturday", "sunday" or "both" (default both)
    soon   : no future pickup dates entered -> "next drop coming soon" */
@@ -57,17 +57,26 @@ function bloomNextDrop(dates, now){
   });
   if(!drops.length) return null;
   drops.sort(function(a,b){return a.close-b.close});
+  var SHORT=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+  function weekend(x){   /* "oct 17 and 18", "oct 31 and nov 1", or one day: "oct 17" */
+    var sun=new Date(x.sat.getFullYear(),x.sat.getMonth(),x.sat.getDate()+1);
+    function md(d){ return SHORT[d.getMonth()]+' '+d.getDate(); }
+    if(!x.onSun) return md(x.sat);
+    if(!x.onSat) return md(sun);
+    return x.sat.getMonth()===sun.getMonth() ? md(x.sat)+' and '+sun.getDate() : md(x.sat)+' and '+md(sun);
+  }
+  function pickupLine(x){   /* "pick up sat 17 or sun 18 oct", "pick up sat 17 oct", "pick up sat 31 oct or sun 1 nov" */
+    var sun=new Date(x.sat.getFullYear(),x.sat.getMonth(),x.sat.getDate()+1);
+    if(!x.onSun) return 'pick up sat '+x.sat.getDate()+' '+SHORT[x.sat.getMonth()];
+    if(!x.onSat) return 'pick up sun '+sun.getDate()+' '+SHORT[sun.getMonth()];
+    return x.sat.getMonth()===sun.getMonth()
+      ? 'pick up sat '+x.sat.getDate()+' or sun '+sun.getDate()+' '+SHORT[sun.getMonth()]
+      : 'pick up sat '+x.sat.getDate()+' '+SHORT[x.sat.getMonth()]+' or sun '+sun.getDate()+' '+SHORT[sun.getMonth()];
+  }
   for(var i=0;i<drops.length;i++){
     var x=drops[i];
-    if(now>=x.close && now<=x.end){
-      var sun=new Date(x.sat.getFullYear(),x.sat.getMonth(),x.sat.getDate()+1);
-      var days = !x.onSun ? say(x.sat) : !x.onSat ? say(sun)
-        : x.sat.getMonth()===sun.getMonth()
-          ? 'saturday '+x.sat.getDate()+' and sunday '+sun.getDate()+' '+MON[sun.getMonth()]
-          : 'saturday '+say(x.sat).split(' ').slice(1).join(' ')+' and '+say(sun);
-      return {state:'closed', pickup:days, hours:x.hours, onSat:x.onSat, onSun:x.onSun};
-    }
-    if(now<x.close) return {state:'open', when:say(x.close), onSat:x.onSat, onSun:x.onSun};
+    if(now>=x.close && now<=x.end) return {state:'closed', title:MON[x.sat.getMonth()]+' drop', pickup:weekend(x), days:pickupLine(x), hours:x.hours, onSat:x.onSat, onSun:x.onSun};
+    if(now<x.close) return {state:'open', title:MON[x.sat.getMonth()]+' drop', when:'tue '+x.close.getDate()+' '+SHORT[x.close.getMonth()], pickup:weekend(x), days:pickupLine(x), onSat:x.onSat, onSun:x.onSun};
   }
   return {state:'soon'};
 }
@@ -84,9 +93,12 @@ function bloomShowDrop(root, dates, now){
     if(sa) sa.classList.toggle(cls, r.onSat!==false);
     if(su) su.classList.toggle(cls, r.onSun!==false);
   }
-  if(r.when) root.querySelector('[data-view="open"] .when').textContent=r.when;
-  if(r.pickup) root.querySelector('[data-view="closed"] .when').textContent=r.pickup;
-  if(r.hours) root.querySelector('[data-view="closed"] .hours').textContent=String(r.hours);
+  var set=function(sel,t){var els=root.querySelectorAll(sel);for(var k=0;k<els.length;k++)els[k].textContent=t};
+  if(r.title) set('[data-view="'+r.state+'"] h2', r.title);
+  if(r.when) set('[data-view="open"] .when', r.when);
+  if(r.pickup) set('[data-view="'+r.state+'"] .drop-date', r.pickup);
+  if(r.days) set('[data-view="'+r.state+'"] .pickup-days', r.days);
+  if(r.hours) set('[data-view="closed"] .hours', String(r.hours));
 }
 
 
@@ -273,37 +285,49 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
 .clock{margin-top:2px!important}
 .pickup{font-size:15px;color:var(--walnut);margin-top:6px}
 .lead{margin:12px 0 0}
-[data-view="closed"] .when{margin-top:14px}
+
 [data-view="closed"] .small{margin-top:10px}
-[hidden]{display:none!important}</style>
+[hidden]{display:none!important}
+.drop-date{font-family:var(--f-body);font-size:22px;line-height:1.3;letter-spacing:.04em;margin:2px 0 4px!important;text-wrap:balance}
+.pickup-days{font-family:var(--f-body);font-size:18px;color:var(--walnut);margin:8px 0 2px!important}
+.week-q{margin-top:26px!important}
+.week .q{position:relative}
+.week .q::before{content:"?";position:absolute;left:50%;top:-1.35em;font-family:var(--f-script);font-size:20px;font-weight:700;color:var(--tangerine);transform:translateX(-50%) rotate(12deg)}
+.week .q:nth-child(6)::before{transform:translateX(-50%) rotate(-10deg)}
+.label{font-family:var(--f-display);font-size:24px;line-height:1.2;margin:12px 0 0!important}
+.label .when{font:inherit;margin:0;white-space:nowrap}
+.stamp-closed{display:inline-block;font-family:var(--f-display);font-size:24px;line-height:1.2;color:var(--tangerine);border:2px solid var(--tangerine);border-radius:10px 14px 9px 13px;padding:2px 12px;margin:14px 0 4px!important;transform:rotate(-3deg)}</style>
 <article class="note">
   <!-- ✏️ edit the text below. the dates fill in from your Wix CMS "Drops" collection -->
   <div data-view="open">
-    <h2>order by tuesday at nine pm</h2>
+    <h2>october drop</h2>
     <div class="week" data-mark="squig" aria-hidden="true"><span>m</span><span class="tue">t</span><span>w</span><span>t</span><span>f</span><span class="squig" data-day="sat">s</span><span class="squig" data-day="sun">s</span></div>
-    <p class="when">tuesday 13 october</p>
+    <p class="label">orders close <span class="when">tue 13 oct</span></p>
     <p class="clock">9:00 pm</p>
+    <p class="pickup-days">pick up sat 17 or sun 18 oct</p>
   </div>
   <div data-view="closed" hidden>
-    <h2>orders closed</h2>
+    <h2>october drop</h2>
     <div class="week" data-mark="circ" aria-hidden="true"><span>m</span><span>t</span><span>w</span><span>t</span><span>f</span><span class="circ" data-day="sat">s</span><span class="circ" data-day="sun">s</span></div>
-    <p class="when">saturday 17 and sunday 18 october</p>
-    <p class="clock">pick up <span class="hours">10–1</span></p>
+    <p class="stamp-closed">orders closed</p>
+    <p class="pickup-days">pick up sat 17 or sun 18 oct</p>
   </div>
   <div data-view="soon" hidden>
     <h2>next drop coming soon</h2>
+    <div class="week week-q" aria-hidden="true"><span>m</span><span class="q">t</span><span>w</span><span>t</span><span>f</span><span class="q">s</span><span class="q">s</span></div>
     <p class="lead">we're planning the next menu. the order date will be up here shortly.</p>
   </div>
 </article>
 `; this.applyDrops();
   }
-  static get observedAttributes(){ return ['drops']; }
+  static get observedAttributes(){ return ['drops','now']; }
   attributeChangedCallback(){ this.applyDrops(); }
   /* page code can send pickup dates as JSON in the "drops" attribute */
   applyDrops(){
     var raw=this.getAttribute('drops'); if(!raw||!this.shadowRoot) return;
     try{ var dates=JSON.parse(raw); }catch(e){ return; }
-    bloomShowDrop(this.shadowRoot, dates);
+    var n=this.getAttribute('now');   /* optional, for previewing a state */
+    bloomShowDrop(this.shadowRoot, dates, n?new Date(n):undefined);
   }
 }
 if(!customElements.get('bloom-deadline')) customElements.define('bloom-deadline', BloomDeadline);
@@ -338,17 +362,28 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
 @media (prefers-reduced-motion:reduce){.note{transition:none}.note:hover{transform:rotate(var(--tilt))}}
 
 :host{padding:34px 26px}
-.note{background:var(--kraft);border-radius:6px;clip-path:polygon(18% 0,82% 0,100% 12%,100% 100%,0 100%,0 12%);padding-top:46px;box-shadow:none;filter:drop-shadow(0 8px 10px rgba(53,38,27,.22))}
+.note{background:var(--kraft);border-radius:6px;clip-path:polygon(18% 0,82% 0,100% 12%,100% 100%,0 100%,0 12%);padding-top:46px;padding-bottom:20px;box-shadow:none;filter:drop-shadow(0 8px 10px rgba(53,38,27,.22))}
 .note:hover{box-shadow:none}
-.note::before{content:"";position:absolute;top:16px;left:50%;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:var(--cream);box-shadow:inset 0 1px 2px rgba(53,38,27,.35)}</style>
+.note::before{content:"";position:absolute;top:16px;left:50%;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:var(--cream);box-shadow:inset 0 1px 2px rgba(53,38,27,.35)}
+.shop-link{display:inline-flex;align-items:center;gap:8px;max-width:100%;box-sizing:border-box;margin-top:4px;font-family:var(--f-body);font-size:15px;line-height:1.3;color:var(--cocoa);text-decoration:none;background:var(--cream);border:2px solid var(--cocoa);border-radius:4px 7px 5px 6px;padding:7px 12px;transform:rotate(-1.5deg);transition:background .2s,transform .2s}
+.shop-link .t{min-width:0}
+.shop-link .arrow{display:block;width:26px;height:13px;flex:0 0 26px;transition:transform .2s}
+.shop-link:hover{background:var(--apricot)}
+.shop-link:hover .arrow{transform:translateX(3px)}
+.shop-link:focus-visible{outline:3px solid var(--tangerine);outline-offset:3px}</style>
 <article class="note">
   <!-- ✏️ edit the text below -->
   <h2>crumbs &amp; clippings</h2>
   <p>missed it? whatever is spare, bakes and flower clippings, drops wednesday.</p>
-  <p class="small">first come, first served.</p>
+  <!-- ✏️ point this at your store menu page -->
+  <p><a class="shop-link" href="https://www.bloomandbake.co/products" target="_top"><span class="t">first come, first served</span><svg class="arrow" viewBox="0 0 28 14" aria-hidden="true"><path d="M1.5 7.6c6-.9 14-.5 22.5-.4M18.5 2.2c2 1.8 4.2 3.4 6.4 5-2.3 1.3-4.6 2.9-6.6 4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
 </article>
-`;
+`; this.applyLink();
   }
+  static get observedAttributes(){ return ['link']; }
+  attributeChangedCallback(){ this.applyLink(); }
+  /* optional: set a "link" attribute to change where the button goes */
+  applyLink(){ var u=this.getAttribute('link'); var a=this.shadowRoot&&this.shadowRoot.querySelector('.shop-link'); if(u&&a) a.href=u; }
 }
 if(!customElements.get('bloom-crumbs')) customElements.define('bloom-crumbs', BloomCrumbs);
 
@@ -381,24 +416,29 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
 .tape{position:absolute;top:-12px;left:50%;width:96px;height:26px;margin-left:-48px;background:rgba(236,142,76,.28);transform:rotate(-3deg)}
 @media (prefers-reduced-motion:reduce){.note{transition:none}.note:hover{transform:rotate(var(--tilt))}}
 
-.note{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 18px}
+.note{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 18px;max-width:520px}
 .body{min-width:0}
 .stamp{width:84px;height:100px;background:var(--cream);border:3px dotted var(--apricot);display:grid;place-items:center;transform:rotate(4deg)}
 .stamp svg{width:58px;height:58px}
-.address{max-width:96px;font-family:var(--f-script);font-size:18px;line-height:1.5;color:var(--walnut);margin-top:12px}
+.side{display:flex;flex-direction:column;justify-content:space-between;gap:20px;border-left:1.5px solid var(--rule);padding-left:16px}
+.address{max-width:96px;font-family:var(--f-script);font-size:18px;line-height:1.4;color:var(--walnut);margin:0!important;width:88px;overflow-wrap:break-word}
 .trades{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0;padding:0;list-style:none}
 .trades li{white-space:nowrap;font-family:var(--f-script);font-size:18px;border:1.5px solid var(--walnut);border-radius:999px;padding:0 10px;line-height:1.5}
-.btn{display:inline-block;margin-top:16px;font-family:var(--f-body);font-size:15px;letter-spacing:.06em;color:var(--cocoa);text-decoration:none;border:2px solid var(--cocoa);padding:8px 22px;background:var(--cream)}
-.btn:hover{background:var(--apricot)}
-@container (max-width:420px){.note{grid-template-columns:minmax(0,1fr)}.side{position:absolute;top:-16px;right:12px}.stamp{width:62px;height:74px}.stamp svg{width:40px;height:40px}.address{display:none}.body{padding-right:52px}</style>
+.shop-link{display:inline-flex;align-items:center;gap:8px;max-width:100%;box-sizing:border-box;margin-top:16px;font-family:var(--f-body);font-size:15px;line-height:1.3;color:var(--cocoa);text-decoration:none;background:var(--cream);border:2px solid var(--cocoa);border-radius:4px 7px 5px 6px;padding:7px 12px;transform:rotate(-1.5deg);transition:background .2s}
+.shop-link .t{min-width:0}
+.shop-link .arrow{display:block;width:26px;height:13px;flex:0 0 26px;transition:transform .2s}
+.shop-link:hover{background:var(--apricot)}
+.shop-link:hover .arrow{transform:translateX(3px)}
+.shop-link:focus-visible{outline:3px solid var(--tangerine);outline-offset:3px}
+@container (max-width:420px){.note{grid-template-columns:minmax(0,1fr)}.side{position:absolute;top:-16px;right:12px;border-left:none;padding-left:0}.stamp{width:62px;height:74px}.stamp svg{width:40px;height:40px}.address{display:none}.body{padding-right:52px}</style>
 <article class="note">
   <div class="body">
     <!-- ✏️ edit the text below -->
-    <h2>propose a barter</h2>
-    <p>got something good to swap? tell us what you'd trade for a box of bakes or a bunch of flowers.</p>
-    <ul class="trades"><li>eggs</li><li>jam</li><li>honey</li><li>garden herbs</li><li>a hand-knit scarf</li></ul>
+    <h2>fancy a swap?</h2>
+    <p>we are open to barters and will select a few each month.</p>
+    <ul class="trades"><li>handmade ceramics</li><li>a vinyl</li><li>help on drop day</li></ul>
     <!-- ✏️ point this at your barter page -->
-    <a class="btn" href="https://www.bloomandbake.co/propose-a-barter" target="_top">write to us</a>
+    <a class="shop-link" href="https://www.bloomandbake.co/propose-a-barter" target="_top"><span class="t">find out more here</span><svg class="arrow" viewBox="0 0 28 14" aria-hidden="true"><path d="M1.5 7.6c6-.9 14-.5 22.5-.4M18.5 2.2c2 1.8 4.2 3.4 6.4 5-2.3 1.3-4.6 2.9-6.6 4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
   </div>
   <div class="side">
     <div class="stamp" aria-hidden="true">
@@ -412,7 +452,11 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
     <p class="address">to: the kitchen table, peckham</p>
   </div>
 </article>
-`;
+`; this.applyLink();
   }
+  static get observedAttributes(){ return ['link']; }
+  attributeChangedCallback(){ this.applyLink(); }
+  /* optional: set a "link" attribute to change where the button goes */
+  applyLink(){ var u=this.getAttribute('link'); var a=this.shadowRoot&&this.shadowRoot.querySelector('.shop-link'); if(u&&a) a.href=u; }
 }
 if(!customElements.get('bloom-barter')) customElements.define('bloom-barter', BloomBarter);
