@@ -80,6 +80,28 @@ function bloomNextDrop(dates, now){
   }
   return {state:'soon'};
 }
+/* crumbs & clippings is open wed to fri of each drop week (the days before pickup saturday).
+   returns {open:true} during that window, {open:false, opens:"wed 14 oct"} before the next one,
+   or null if there are no dates. */
+function bloomCrumbsWindow(dates, now){
+  now = now || new Date();
+  var SH=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+  var next=null, any=false;
+  for(var i=0;i<(dates||[]).length;i++){
+    var v=dates[i]; if(v&&typeof v==='object'&&!(v instanceof Date)) v=v.date;
+    var d=null;
+    if(typeof v==='string'){ var p=v.slice(0,10).split('-').map(Number); if(p.length===3&&p[0]) d=new Date(p[0],p[1]-1,p[2]); }
+    else if(v){ var x=new Date(v); if(!isNaN(x)) d=new Date(x.getFullYear(),x.getMonth(),x.getDate()); }
+    if(!d) continue; any=true;
+    var day=d.getDay(), sat=new Date(d.getFullYear(),d.getMonth(),d.getDate()+(day===0?-1:(6-day)));
+    var start=new Date(sat.getFullYear(),sat.getMonth(),sat.getDate()-3,0,0,0);
+    var end=new Date(sat.getFullYear(),sat.getMonth(),sat.getDate()-1,23,59,59);
+    if(now>=start&&now<=end) return {open:true};
+    if(start>now&&(!next||start<next)) next=start;
+  }
+  if(!any) return null;
+  return {open:false, opens: next ? 'wed '+next.getDate()+' '+SH[next.getMonth()] : ''};
+}
 /* shows the right view inside a deadline note */
 function bloomShowDrop(root, dates, now){
   var r=bloomNextDrop(dates, now); if(!r) return;
@@ -358,7 +380,13 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
 .week .q:nth-child(6)::before{transform:translateX(-50%) rotate(-10deg)}
 .label{font-family:var(--f-display);font-size:24px;line-height:1.2;margin:12px 0 0!important}
 .label .when{font:inherit;margin:0;white-space:nowrap}
-.stamp-closed{display:inline-block;font-family:var(--f-display);font-size:24px;line-height:1.2;color:var(--tangerine);border:2px solid var(--tangerine);border-radius:10px 14px 9px 13px;padding:2px 12px;margin:14px 0 4px!important;transform:rotate(-3deg)}</style>
+.stamp-closed{display:inline-block;font-family:var(--f-display);font-size:24px;line-height:1.2;color:var(--tangerine);border:2px solid var(--tangerine);border-radius:10px 14px 9px 13px;padding:2px 12px;margin:14px 0 4px!important;transform:rotate(-3deg)}
+.shop-link{display:inline-flex;align-items:center;gap:8px;max-width:100%;box-sizing:border-box;margin-top:16px;font-family:var(--f-body);font-size:15px;line-height:1.3;color:var(--cocoa);text-decoration:none;background:var(--cream);border:2px solid var(--cocoa);border-radius:4px 7px 5px 6px;padding:7px 14px;transform:rotate(-1.5deg);transition:background .2s}
+.shop-link .t{min-width:0}
+.shop-link .arrow{display:block;width:26px;height:13px;flex:0 0 26px;transition:transform .2s}
+.shop-link:hover{background:var(--apricot)}
+.shop-link:hover .arrow{transform:translateX(3px)}
+.shop-link:focus-visible{outline:3px solid var(--tangerine);outline-offset:3px}</style>
 <article class="note">
   <!-- \u270f\ufe0f edit the text below. the dates fill in from your Wix CMS "Drops" collection -->
   <div data-view="open">
@@ -367,6 +395,8 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
     <p class="label">orders close <span class="when">tue 13 oct</span></p>
     <p class="clock">9:00 pm</p>
     <p class="pickup-days">pick up sat 17 or sun 18 oct</p>
+    <!-- \u270f\ufe0f point this at your shop page -->
+    <a class="shop-link order-link" href="https://www.bloomandbake.co/category/all-products" target="_top"><span class="t">order now</span><svg class="arrow" viewBox="0 0 28 14" aria-hidden="true"><path d="M1.5 7.6c6-.9 14-.5 22.5-.4M18.5 2.2c2 1.8 4.2 3.4 6.4 5-2.3 1.3-4.6 2.9-6.6 4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
   </div>
   <div data-view="closed" hidden>
     <h2>october drop</h2>
@@ -380,10 +410,11 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
     <p class="lead">we're planning the next menu. the order date will be up here shortly.</p>
   </div>
 </article>
-`; this.applyTilt(); this.initPop(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applyDrops();
+`; this.applyTilt(); this.initPop(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applyDrops(); this.applyLink();
   }
-  static get observedAttributes(){ return ['tilt','data-tilt','drops','now']; }
-  attributeChangedCallback(n){ if(n==='tilt'||n==='data-tilt'){ this.applyTilt(); return; } this.applyDrops(); }
+  static get observedAttributes(){ return ['tilt','data-tilt','drops','now','link']; }
+  attributeChangedCallback(n){ if(n==='tilt'||n==='data-tilt'){ this.applyTilt(); return; } this.applyDrops(); this.applyLink(); }
+  applyLink(){ var u=this.getAttribute('link'); var a=this.shadowRoot&&this.shadowRoot.querySelector('.order-link'); if(u&&a) a.href=u; }
   /* page code can send pickup dates as JSON in the "drops" attribute */
   applyDrops(){
     var raw=this.getAttribute('drops'); if(!raw||!this.shadowRoot) return;
@@ -428,6 +459,8 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
 .note:hover{box-shadow:none}
 .note::after{content:"";position:absolute;inset:0;z-index:-1;background:var(--kraft);border-radius:6px;clip-path:polygon(18% 0,82% 0,100% 12%,100% 100%,0 100%,0 12%)}
 .string{position:absolute;top:-50px;left:50%;width:130px;height:78px;margin-left:-30px;pointer-events:none}
+.crumbs-when{font:400 20px/1.2 var(--f-display);color:var(--walnut);margin-top:10px!important}
+[hidden]{display:none!important}
 .note::before{content:"";position:absolute;top:16px;left:50%;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:var(--cream);box-shadow:inset 0 1px 2px rgba(53,38,27,.35)}
 .shop-link{display:inline-flex;align-items:center;gap:8px;max-width:100%;box-sizing:border-box;margin-top:4px;font-family:var(--f-body);font-size:15px;line-height:1.3;color:var(--cocoa);text-decoration:none;background:var(--cream);border:2px solid var(--cocoa);border-radius:4px 7px 5px 6px;padding:7px 12px;transform:rotate(-1.5deg);transition:background .2s,transform .2s}
 .shop-link .t{min-width:0}
@@ -441,14 +474,24 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
   <h2>crumbs &amp; clippings</h2>
   <p>missed it? whatever is spare, bakes and flower clippings, drops wednesday.</p>
   <!-- \u270f\ufe0f point this at your store menu page -->
-  <p><a class="shop-link" href="https://www.bloomandbake.co/products" target="_top"><span class="t">first come, first served</span><svg class="arrow" viewBox="0 0 28 14" aria-hidden="true"><path d="M1.5 7.6c6-.9 14-.5 22.5-.4M18.5 2.2c2 1.8 4.2 3.4 6.4 5-2.3 1.3-4.6 2.9-6.6 4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
+  <p id="crumbs-btn" hidden><a class="shop-link" href="https://www.bloomandbake.co/category/all-products" target="_top"><span class="t">first come, first served</span><svg class="arrow" viewBox="0 0 28 14" aria-hidden="true"><path d="M1.5 7.6c6-.9 14-.5 22.5-.4M18.5 2.2c2 1.8 4.2 3.4 6.4 5-2.3 1.3-4.6 2.9-6.6 4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
+  <p class="crumbs-when" id="crumbs-when" hidden>opens wed</p>
 </article>
-`; this.applyTilt(); this.initPop(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applyLink();
+`; this.applyTilt(); this.initPop(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applyLink(); this.applyCrumbs();
   }
-  static get observedAttributes(){ return ['tilt','data-tilt','link']; }
-  attributeChangedCallback(n){ if(n==='tilt'||n==='data-tilt'){ this.applyTilt(); return; } this.applyLink(); }
-  /* optional: set a "link" attribute to change where the button goes */
+  static get observedAttributes(){ return ['tilt','data-tilt','link','drops','now']; }
+  attributeChangedCallback(n){ if(n==='tilt'||n==='data-tilt'){ this.applyTilt(); return; } this.applyLink(); this.applyCrumbs(); }
   applyLink(){ var u=this.getAttribute('link'); var a=this.shadowRoot&&this.shadowRoot.querySelector('.shop-link'); if(u&&a) a.href=u; }
+  /* page code sends the drop dates; the button only shows wed to fri of drop week */
+  applyCrumbs(){
+    var r=this.shadowRoot; if(!r) return;
+    var btn=r.getElementById('crumbs-btn'), when=r.getElementById('crumbs-when');
+    var raw=this.getAttribute('drops'); var dates=null; try{ dates=raw?JSON.parse(raw):null; }catch(e){}
+    var n=this.getAttribute('now'); var w=dates?bloomCrumbsWindow(dates, n?new Date(n):undefined):null;
+    if(!w){ btn.hidden=true; when.hidden=true; return; }
+    btn.hidden=!w.open;
+    if(!w.open&&w.opens){ when.textContent='opens '+w.opens; when.hidden=false; } else when.hidden=true;
+  }
 }
 if(!customElements.get('bloom-crumbs')) customElements.define('bloom-crumbs', BloomCrumbs);
 
@@ -507,7 +550,7 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
     <p>we are open to barters and will select a few each month.</p>
     <ul class="trades"><li>handmade ceramics</li><li>a vinyl</li><li>help on drop day</li></ul>
     <!-- \u270f\ufe0f point this at your barter page -->
-    <a class="shop-link" href="https://www.bloomandbake.co/propose-a-barter" target="_top"><span class="t">find out more here</span><svg class="arrow" viewBox="0 0 28 14" aria-hidden="true"><path d="M1.5 7.6c6-.9 14-.5 22.5-.4M18.5 2.2c2 1.8 4.2 3.4 6.4 5-2.3 1.3-4.6 2.9-6.6 4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+    <a class="shop-link" href="https://www.bloomandbake.co/proposeabarter" target="_top"><span class="t">find out more here</span><svg class="arrow" viewBox="0 0 28 14" aria-hidden="true"><path d="M1.5 7.6c6-.9 14-.5 22.5-.4M18.5 2.2c2 1.8 4.2 3.4 6.4 5-2.3 1.3-4.6 2.9-6.6 4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
   </div>
   <div class="side">
     <div class="stamp" aria-hidden="true">
@@ -670,7 +713,7 @@ h2{font-size:28px!important;line-height:1.1}
     <h2>barters</h2>
     <p>we don't want price to be a barrier, so we're always open to trading. some ideas:</p>
     <ul class="dots"><li>a pottery or ceramics lesson</li><li>handmade plates, vases, mugs (anything for the table)</li><li>kitchen time</li></ul>
-    <a class="pill-link" href="https://www.bloomandbake.co/propose-a-barter" target="_top"><span>how barters work</span><svg viewBox="0 0 28 14" aria-hidden="true"><path d="M1.5 7.6c6-.9 14-.5 22.5-.4M18.5 2.2c2 1.8 4.2 3.4 6.4 5-2.3 1.3-4.6 2.9-6.6 4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+    <a class="pill-link" href="https://www.bloomandbake.co/proposeabarter" target="_top"><span>how barters work</span><svg viewBox="0 0 28 14" aria-hidden="true"><path d="M1.5 7.6c6-.9 14-.5 22.5-.4M18.5 2.2c2 1.8 4.2 3.4 6.4 5-2.3 1.3-4.6 2.9-6.6 4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
   </article>
   <article class="note postit" style="--pi:#FDE9B8;--tilt:.6deg">
     <h2>collabs</h2>
