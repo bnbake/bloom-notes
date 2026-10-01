@@ -28,7 +28,8 @@
    orders close at 9pm on the tuesday before.
    open   : before the deadline           -> "order by tuesday 13 october, 9:00 pm"
    closed : deadline passed, pickup is on -> "orders closed", sat + sun circled, "pick up 10–1"
-   each entry can be a date, or {date, hours} where hours is the pickup time, e.g. "10–1"
+   each entry can be a date, or {date, hours, days}: hours is the pickup time, e.g. "10–1",
+   days is "saturday", "sunday" or "both" (default both)
    soon   : no future pickup dates entered -> "next drop coming soon" */
 function bloomNextDrop(dates, now){
   now = now || new Date();
@@ -42,12 +43,15 @@ function bloomNextDrop(dates, now){
   function say(d){ return DAY[d.getDay()]+' '+d.getDate()+' '+MON[d.getMonth()]; }
   var drops=[];
   (dates||[]).forEach(function(v){
-    var hours=(v&&typeof v==='object'&&!(v instanceof Date))?v.hours:null;
+    var obj=(v&&typeof v==='object'&&!(v instanceof Date));
+    var hours=obj?v.hours:null;
+    var which=String((obj&&v.days)||'both').toLowerCase();
+    var sat1=which.indexOf('sun')===-1||which.indexOf('sat')!==-1||which==='both', sun1=which.indexOf('sat')===-1||which.indexOf('sun')!==-1||which==='both';
     if(v&&typeof v==='object'&&!(v instanceof Date)) v=v.date;
     var d=toDay(v); if(!d) return;
     var day=d.getDay();
     var sat=new Date(d.getFullYear(),d.getMonth(),d.getDate()+(day===0?-1:(6-day)));
-    drops.push({sat:sat,hours:hours,
+    drops.push({sat:sat,hours:hours,onSat:sat1,onSun:sun1,
       close:new Date(sat.getFullYear(),sat.getMonth(),sat.getDate()-4,21,0,0),
       end:new Date(sat.getFullYear(),sat.getMonth(),sat.getDate()+1,23,59,59)});
   });
@@ -57,12 +61,13 @@ function bloomNextDrop(dates, now){
     var x=drops[i];
     if(now>=x.close && now<=x.end){
       var sun=new Date(x.sat.getFullYear(),x.sat.getMonth(),x.sat.getDate()+1);
-      var days=x.sat.getMonth()===sun.getMonth()
-        ? 'saturday '+x.sat.getDate()+' and sunday '+sun.getDate()+' '+MON[sun.getMonth()]
-        : 'saturday '+say(x.sat).split(' ').slice(1).join(' ')+' and '+say(sun);
-      return {state:'closed', pickup:days, hours:x.hours};
+      var days = !x.onSun ? say(x.sat) : !x.onSat ? say(sun)
+        : x.sat.getMonth()===sun.getMonth()
+          ? 'saturday '+x.sat.getDate()+' and sunday '+sun.getDate()+' '+MON[sun.getMonth()]
+          : 'saturday '+say(x.sat).split(' ').slice(1).join(' ')+' and '+say(sun);
+      return {state:'closed', pickup:days, hours:x.hours, onSat:x.onSat, onSun:x.onSun};
     }
-    if(now<x.close) return {state:'open', when:say(x.close)};
+    if(now<x.close) return {state:'open', when:say(x.close), onSat:x.onSat, onSun:x.onSun};
   }
   return {state:'soon'};
 }
@@ -71,6 +76,14 @@ function bloomShowDrop(root, dates, now){
   var r=bloomNextDrop(dates, now); if(!r) return;
   var views=root.querySelectorAll('[data-view]');
   for(var i=0;i<views.length;i++) views[i].hidden=(views[i].getAttribute('data-view')!==r.state);
+  /* mark the pickup day(s): squiggle in the order view, circle in the closed view */
+  var marks=root.querySelectorAll('[data-mark]');
+  for(var m=0;m<marks.length;m++){
+    var cls=marks[m].getAttribute('data-mark');
+    var sa=marks[m].querySelector('[data-day="sat"]'), su=marks[m].querySelector('[data-day="sun"]');
+    if(sa) sa.classList.toggle(cls, r.onSat!==false);
+    if(su) su.classList.toggle(cls, r.onSun!==false);
+  }
   if(r.when) root.querySelector('[data-view="open"] .when').textContent=r.when;
   if(r.pickup) root.querySelector('[data-view="closed"] .when').textContent=r.pickup;
   if(r.hours) root.querySelector('[data-view="closed"] .hours').textContent=String(r.hours);
@@ -254,7 +267,7 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
 .week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:14px 0 4px;text-align:center;font-family:var(--f-script);font-size:18px}
 .week .tue,.week .circ{position:relative;font-weight:700}
 .week .tue::after,.week .circ::after{content:"";position:absolute;inset:-6px -4px;border:2px solid var(--tangerine);border-radius:50% 45% 55% 48%;transform:rotate(-8deg)}
-.week .wed{color:var(--walnut);text-decoration:underline wavy var(--apricot) 1.5px;text-underline-offset:5px}
+.week .squig{color:var(--walnut);text-decoration:underline wavy var(--tangerine) 1.5px;text-underline-offset:5px}
 .clock{font-family:var(--f-display);font-size:48px;line-height:1;color:var(--tangerine);margin:8px 0 4px}
 .when{font-family:var(--f-display);font-size:28px;line-height:1.2;margin:14px 0 0;text-wrap:balance}
 .clock{margin-top:2px!important}
@@ -267,13 +280,13 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
   <!-- ✏️ edit the text below. the dates fill in from your Wix CMS "Drops" collection -->
   <div data-view="open">
     <h2>order by tuesday at nine pm</h2>
-    <div class="week" aria-hidden="true"><span>m</span><span class="tue">t</span><span class="wed">w</span><span>t</span><span>f</span><span>s</span><span>s</span></div>
+    <div class="week" data-mark="squig" aria-hidden="true"><span>m</span><span class="tue">t</span><span>w</span><span>t</span><span>f</span><span class="squig" data-day="sat">s</span><span class="squig" data-day="sun">s</span></div>
     <p class="when">tuesday 13 october</p>
     <p class="clock">9:00 pm</p>
   </div>
   <div data-view="closed" hidden>
     <h2>orders closed</h2>
-    <div class="week" aria-hidden="true"><span>m</span><span>t</span><span>w</span><span>t</span><span>f</span><span class="circ">s</span><span class="circ">s</span></div>
+    <div class="week" data-mark="circ" aria-hidden="true"><span>m</span><span>t</span><span>w</span><span>t</span><span>f</span><span class="circ" data-day="sat">s</span><span class="circ" data-day="sun">s</span></div>
     <p class="when">saturday 17 and sunday 18 october</p>
     <p class="clock">pick up <span class="hours">10–1</span></p>
   </div>
