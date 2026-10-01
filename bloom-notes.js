@@ -106,7 +106,7 @@ function bloomShowDrop(root, dates, now){
    - an optional "tilt" attribute, e.g. -2deg or 0deg
    - tap/click a note to open it large in the middle of the screen (set popout="off" to turn this off) */
 var BLOOM_X='<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4.5 4.8c3.8 3.2 7.2 6.8 11 10.6M15.3 4.4c-3.6 3.9-7 7.4-10.9 11.1" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>';
-var BLOOM_POP_CSS='.wrap{display:contents}:host{position:fixed!important;inset:0!important;z-index:2147483000!important;display:grid!important;place-items:center;padding:calc(env(safe-area-inset-top,0px) + 24px) 16px calc(env(safe-area-inset-bottom,0px) + 24px)!important;box-sizing:border-box}'+
+var BLOOM_POP_CSS='.wrap{display:contents}:host{pointer-events:auto!important;position:fixed!important;inset:0!important;z-index:2147483000!important;display:grid!important;place-items:center;padding:calc(env(safe-area-inset-top,0px) + 24px) 16px calc(env(safe-area-inset-bottom,0px) + 24px)!important;box-sizing:border-box}'+
  '.pop-shade{position:fixed;inset:0;background:rgba(53,38,27,.45);opacity:0;transition:opacity .3s}'+
  '.open .pop-shade{opacity:1}'+
  '.pop-card{position:relative;width:min(580px,100%);max-height:100%;overflow:auto;padding-top:16px;transform:translateY(24px) scale(.92) rotate(var(--tilt,0deg));opacity:0;transition:transform .42s cubic-bezier(.2,.9,.25,1.08),opacity .25s}'+
@@ -119,7 +119,14 @@ var BLOOM_POP_CSS='.wrap{display:contents}:host{position:fixed!important;inset:0
  '.pop-close:focus-visible{outline:3px solid #EC8E4C;outline-offset:2px}'+
  '@media (prefers-reduced-motion:reduce){.pop-card,.pop-shade{transition:none}}';
 class BloomNote extends HTMLElement {
-  applyTilt(){ var t=this.getAttribute('tilt'); if(t!==null){ if(/^-?\\d+(\\.\\d+)?$/.test(t.trim())) t=t.trim()+'deg'; this.style.setProperty('--tilt', t); } }
+  applyTilt(){
+    var t=this.getAttribute('tilt')||this.getAttribute('data-tilt');
+    if(t===null||t==='') return;
+    t=String(t).trim(); if(/^-?[0-9]+([.][0-9]+)?$/.test(t)) t+='deg';
+    this.style.setProperty('--tilt', t);
+    var n=this.shadowRoot&&this.shadowRoot.querySelector('.note'); if(n) n.style.setProperty('--tilt', t);
+    this._tilt=t;
+  }
   initPop(){
     var self=this, note=this.shadowRoot&&this.shadowRoot.querySelector('.note');
     if(!note||note._bloomPop) return; note._bloomPop=true;
@@ -131,7 +138,7 @@ class BloomNote extends HTMLElement {
     if((this.getAttribute('popout')||'').toLowerCase()==='off'||this._pop) return;
     var self=this, src=this.shadowRoot.querySelector('.note'), css=this.shadowRoot.querySelector('style').textContent;
     var host=document.createElement('div'); host.setAttribute('data-bloom-pop','');
-    var tilt=getComputedStyle(this).getPropertyValue('--tilt'); if(tilt) host.style.setProperty('--tilt',tilt);
+    var tilt=this._tilt||getComputedStyle(src).getPropertyValue('--tilt'); if(tilt) host.style.setProperty('--tilt',tilt);
     var r=host.attachShadow({mode:'open'});
     var clone=src.cloneNode(true); clone.removeAttribute('tabindex'); clone.removeAttribute('role'); clone.style.cursor='';
     r.innerHTML='<style>'+css+BLOOM_POP_CSS+'</style><div class="wrap"><div class="pop-shade"></div><div class="pop-card" role="dialog" aria-modal="true"><button class="pop-close" type="button" aria-label="close">'+BLOOM_X+'</button></div></div>';
@@ -172,7 +179,7 @@ class BloomLetter extends BloomNote {
   --tilt:-1.2deg;
 }
 *{box-sizing:border-box}
-:host{display:block;background:transparent;container-type:inline-size}
+:host{display:block;background:transparent;container-type:inline-size;pointer-events:none}.note{pointer-events:auto}
 :host{padding:28px 22px;font-family:var(--f-body);font-size:18px;line-height:1.75;letter-spacing:.03em;color:var(--cocoa)}
 .note{position:relative;background:var(--paper);padding:28px 28px 30px;border-radius:2px;
   box-shadow:0 1px 0 rgba(53,38,27,.06),0 10px 22px -12px rgba(53,38,27,.35);
@@ -210,7 +217,7 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
   <p>order by tuesday night, collect at the weekend, and if you'd rather swap than pay, we're always up for a barter.</p>
   <div class="sign">see you soon,<strong>the bloom &amp; bake crew</strong></div>
 </article>
-`; this.applyTilt(); this.initPop();
+`; this.applyTilt(); this.initPop(); var me=this; setTimeout(function(){me.applyTilt()},300);
   }
 }
 if(!customElements.get('bloom-letter')) customElements.define('bloom-letter', BloomLetter);
@@ -232,7 +239,7 @@ class BloomDrops extends BloomNote {
   --tilt:1.6deg;
 }
 *{box-sizing:border-box}
-:host{display:block;background:transparent;container-type:inline-size}
+:host{display:block;background:transparent;container-type:inline-size;pointer-events:none}.note{pointer-events:auto}
 :host{padding:28px 22px;font-family:var(--f-body);font-size:18px;line-height:1.75;letter-spacing:.03em;color:var(--cocoa)}
 .note{position:relative;background:var(--paper);padding:28px 28px 30px;border-radius:2px;
   box-shadow:0 1px 0 rgba(53,38,27,.06),0 10px 22px -12px rgba(53,38,27,.35);
@@ -280,10 +287,10 @@ h2{margin-bottom:22px}
     </ul>
   </div>
 </article>
-`; this.applyTilt(); this.initPop(); this.applySpecials();
+`; this.applyTilt(); this.initPop(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applySpecials();
   }
-  static get observedAttributes(){ return ['tilt','specials']; }
-  attributeChangedCallback(n){ if(n==='tilt'){ this.applyTilt(); return; } this.applySpecials(); }
+  static get observedAttributes(){ return ['tilt','data-tilt','specials']; }
+  attributeChangedCallback(n){ if(n==='tilt'||n==='data-tilt'){ this.applyTilt(); return; } this.applySpecials(); }
   /* page code can send {heading, items} as JSON in the "specials" attribute */
   applySpecials(){
     var raw=this.getAttribute('specials'); if(!raw||!this.shadowRoot) return;
@@ -316,7 +323,7 @@ class BloomDeadline extends BloomNote {
   --tilt:2.4deg;
 }
 *{box-sizing:border-box}
-:host{display:block;background:transparent;container-type:inline-size}
+:host{display:block;background:transparent;container-type:inline-size;pointer-events:none}.note{pointer-events:auto}
 :host{padding:28px 22px;font-family:var(--f-body);font-size:18px;line-height:1.75;letter-spacing:.03em;color:var(--cocoa)}
 .note{position:relative;background:var(--paper);padding:28px 28px 30px;border-radius:2px;
   box-shadow:0 1px 0 rgba(53,38,27,.06),0 10px 22px -12px rgba(53,38,27,.35);
@@ -371,10 +378,10 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
     <p class="lead">we're planning the next menu. the order date will be up here shortly.</p>
   </div>
 </article>
-`; this.applyTilt(); this.initPop(); this.applyDrops();
+`; this.applyTilt(); this.initPop(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applyDrops();
   }
-  static get observedAttributes(){ return ['tilt','drops','now']; }
-  attributeChangedCallback(n){ if(n==='tilt'){ this.applyTilt(); return; } this.applyDrops(); }
+  static get observedAttributes(){ return ['tilt','data-tilt','drops','now']; }
+  attributeChangedCallback(n){ if(n==='tilt'||n==='data-tilt'){ this.applyTilt(); return; } this.applyDrops(); }
   /* page code can send pickup dates as JSON in the "drops" attribute */
   applyDrops(){
     var raw=this.getAttribute('drops'); if(!raw||!this.shadowRoot) return;
@@ -402,7 +409,7 @@ class BloomCrumbs extends BloomNote {
   --tilt:-3deg;
 }
 *{box-sizing:border-box}
-:host{display:block;background:transparent;container-type:inline-size}
+:host{display:block;background:transparent;container-type:inline-size;pointer-events:none}.note{pointer-events:auto}
 :host{padding:28px 22px;font-family:var(--f-body);font-size:18px;line-height:1.75;letter-spacing:.03em;color:var(--cocoa)}
 .note{position:relative;background:var(--paper);padding:28px 28px 30px;border-radius:2px;
   box-shadow:0 1px 0 rgba(53,38,27,.06),0 10px 22px -12px rgba(53,38,27,.35);
@@ -431,10 +438,10 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
   <!-- ✏️ point this at your store menu page -->
   <p><a class="shop-link" href="https://www.bloomandbake.co/products" target="_top"><span class="t">first come, first served</span><svg class="arrow" viewBox="0 0 28 14" aria-hidden="true"><path d="M1.5 7.6c6-.9 14-.5 22.5-.4M18.5 2.2c2 1.8 4.2 3.4 6.4 5-2.3 1.3-4.6 2.9-6.6 4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
 </article>
-`; this.applyTilt(); this.initPop(); this.applyLink();
+`; this.applyTilt(); this.initPop(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applyLink();
   }
-  static get observedAttributes(){ return ['tilt','link']; }
-  attributeChangedCallback(n){ if(n==='tilt'){ this.applyTilt(); return; } this.applyLink(); }
+  static get observedAttributes(){ return ['tilt','data-tilt','link']; }
+  attributeChangedCallback(n){ if(n==='tilt'||n==='data-tilt'){ this.applyTilt(); return; } this.applyLink(); }
   /* optional: set a "link" attribute to change where the button goes */
   applyLink(){ var u=this.getAttribute('link'); var a=this.shadowRoot&&this.shadowRoot.querySelector('.shop-link'); if(u&&a) a.href=u; }
 }
@@ -457,7 +464,7 @@ class BloomBarter extends BloomNote {
   --tilt:1deg;
 }
 *{box-sizing:border-box}
-:host{display:block;background:transparent;container-type:inline-size}
+:host{display:block;background:transparent;container-type:inline-size;pointer-events:none}.note{pointer-events:auto}
 :host{padding:28px 22px;font-family:var(--f-body);font-size:18px;line-height:1.75;letter-spacing:.03em;color:var(--cocoa)}
 .note{position:relative;background:var(--paper);padding:28px 28px 30px;border-radius:2px;
   box-shadow:0 1px 0 rgba(53,38,27,.06),0 10px 22px -12px rgba(53,38,27,.35);
@@ -505,10 +512,10 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
     <p class="address">to: the kitchen table, peckham</p>
   </div>
 </article>
-`; this.applyTilt(); this.initPop(); this.applyLink();
+`; this.applyTilt(); this.initPop(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applyLink();
   }
-  static get observedAttributes(){ return ['tilt','link']; }
-  attributeChangedCallback(n){ if(n==='tilt'){ this.applyTilt(); return; } this.applyLink(); }
+  static get observedAttributes(){ return ['tilt','data-tilt','link']; }
+  attributeChangedCallback(n){ if(n==='tilt'||n==='data-tilt'){ this.applyTilt(); return; } this.applyLink(); }
   /* optional: set a "link" attribute to change where the button goes */
   applyLink(){ var u=this.getAttribute('link'); var a=this.shadowRoot&&this.shadowRoot.querySelector('.shop-link'); if(u&&a) a.href=u; }
 }
