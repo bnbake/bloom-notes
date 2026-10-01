@@ -23,6 +23,37 @@
   document.head.appendChild(st);
 })();
 
+/* works out the next order deadline from a list of pickup dates.
+   each date = the saturday of a pickup weekend ("2026-10-17" or a Date).
+   orders close at 9pm on the tuesday before. */
+function bloomNextDrop(dates, now){
+  now = now || new Date();
+  var ORD=['','first','second','third','fourth','fifth','sixth','seventh','eighth','ninth','tenth','eleventh','twelfth','thirteenth','fourteenth','fifteenth','sixteenth','seventeenth','eighteenth','nineteenth','twentieth','twenty first','twenty second','twenty third','twenty fourth','twenty fifth','twenty sixth','twenty seventh','twenty eighth','twenty ninth','thirtieth','thirty first'];
+  var MON=['january','february','march','april','may','june','july','august','september','october','november','december'];
+  function toDay(v){
+    if(!v) return null;
+    if(typeof v==='string'){ var p=v.slice(0,10).split('-').map(Number); if(p.length<3||!p[0]) return null; return new Date(p[0],p[1]-1,p[2]); }
+    var d=new Date(v); if(isNaN(d)) return null; return new Date(d.getFullYear(),d.getMonth(),d.getDate());
+  }
+  var best=null;
+  (dates||[]).forEach(function(v){
+    var d=toDay(v); if(!d) return;
+    var day=d.getDay();                               /* 0 sun ... 6 sat */
+    var sat=new Date(d); sat.setDate(d.getDate()+(day===0?-1:(6-day)));
+    var close=new Date(sat.getFullYear(),sat.getMonth(),sat.getDate()-4,21,0,0);
+    if(close>=now && (!best||close<best.close)) best={close:close,sat:sat};
+  });
+  if(!best) return null;
+  var sun=new Date(best.sat); sun.setDate(sun.getDate()+1);
+  var c=best.close;
+  return {
+    when:'tuesday '+c.getDate()+' '+MON[c.getMonth()],
+    pickup:'pickup weekend: saturday the '+ORD[best.sat.getDate()]+
+      (best.sat.getMonth()!==sun.getMonth()?' of '+MON[best.sat.getMonth()]:'')+
+      ' and sunday the '+ORD[sun.getDate()]+' of '+MON[sun.getMonth()]
+  };
+}
+
 
 /* ===================== bloom-letter ===================== */
 class BloomLetter extends HTMLElement {
@@ -145,6 +176,7 @@ h2{margin-bottom:22px}
       <li><svg class="star" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 1.8l2.3 5.4 5.9.5-4.5 3.9 1.4 5.8L10 14.3l-5.1 3.1 1.4-5.8L1.8 7.7l5.9-.5z" fill="none" stroke="#EC8E4C" stroke-width="1.6" stroke-linejoin="round"/></svg>fig and honey tart</li>
       <li><svg class="star" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 1.8l2.3 5.4 5.9.5-4.5 3.9 1.4 5.8L10 14.3l-5.1 3.1 1.4-5.8L1.8 7.7l5.9-.5z" fill="none" stroke="#EC8E4C" stroke-width="1.6" stroke-linejoin="round"/></svg>spiced apple scones</li>
     </ul>
+  </div>
 </article>
 `; this.applySpecials();
   }
@@ -194,20 +226,32 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
 .tape{position:absolute;top:-12px;left:50%;width:96px;height:26px;margin-left:-48px;background:rgba(236,142,76,.28);transform:rotate(-3deg)}
 @media (prefers-reduced-motion:reduce){.note{transition:none}.note:hover{transform:rotate(var(--tilt))}}
 
-.note{background:var(--sticky)}
+.note{background:var(--sticky);padding-bottom:22px}
 .week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:14px 0 4px;text-align:center;font-family:var(--f-script);font-size:18px}
 .week .tue{position:relative;font-weight:700}
 .week .tue::after{content:"";position:absolute;inset:-6px -4px;border:2px solid var(--tangerine);border-radius:50% 45% 55% 48%;transform:rotate(-8deg)}
 .week .wed{color:var(--walnut);text-decoration:underline wavy var(--apricot) 1.5px;text-underline-offset:5px}
-.clock{font-family:var(--f-display);font-size:48px;line-height:1;color:var(--tangerine);margin:8px 0 4px}</style>
+.clock{font-family:var(--f-display);font-size:48px;line-height:1;color:var(--tangerine);margin:8px 0 4px}
+.when{font-family:var(--f-display);font-size:28px;line-height:1.2;margin:14px 0 0;text-wrap:balance}
+.clock{margin-top:2px!important}
+.pickup{font-size:15px;color:var(--walnut);margin-top:6px}</style>
 <article class="note">
-  <!-- ✏️ edit the text below -->
   <h2>order by tuesday at nine pm</h2>
   <div class="week" aria-hidden="true"><span>m</span><span class="tue">t</span><span class="wed">w</span><span>t</span><span>f</span><span>s</span><span>s</span></div>
+  <!-- ✏️ the date fills in from your Wix CMS "Drops" collection; the text here shows if nothing is connected -->
+  <p class="when" id="when">tuesday 13 october</p>
   <p class="clock">9:00 pm</p>
-  <p>orders close the tuesday before the drop.</p>
 </article>
-`;
+`; this.applyDrops();
+  }
+  static get observedAttributes(){ return ['drops']; }
+  attributeChangedCallback(){ this.applyDrops(); }
+  /* page code can send pickup dates as JSON in the "drops" attribute */
+  applyDrops(){
+    var raw=this.getAttribute('drops'); if(!raw||!this.shadowRoot) return;
+    try{ var dates=JSON.parse(raw); }catch(e){ return; }
+    var r=bloomNextDrop(dates); if(!r) return;
+    this.shadowRoot.getElementById('when').textContent=r.when;
   }
 }
 if(!customElements.get('bloom-deadline')) customElements.define('bloom-deadline', BloomDeadline);
