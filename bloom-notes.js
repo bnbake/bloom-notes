@@ -148,6 +148,37 @@ class BloomNote extends HTMLElement {
     this.style.setProperty('--tilt', t);
     var n=this.shadowRoot&&this.shadowRoot.querySelector('.note'); if(n) n.style.setProperty('--tilt', t);
     this._tilt=t;
+    if(this._relayout) this._relayout();
+  }
+  /* keeps the element's box snug: padding grows just enough for the tilt, tape, strings and shadow,
+     and is re-measured whenever the box is resized or the content changes */
+  initFit(){
+    var self=this; if(this._fitOn||(this.getAttribute('fit')||'').toLowerCase()==='off') return; this._fitOn=true;
+    var run=function(){ if(self._fitRaf) return; self._fitRaf=requestAnimationFrame(function(){ self._fitRaf=0; self.fitBox(); }); };
+    if('ResizeObserver' in window){ this._fitRO=new ResizeObserver(run); this._fitRO.observe(this);
+      var main=this.shadowRoot&&this.shadowRoot.querySelector('.note,.banner-wrap'); if(main) this._fitRO.observe(main); }
+    if(document.fonts&&document.fonts.ready) document.fonts.ready.then(run);
+    setTimeout(run,60); setTimeout(run,600);
+  }
+  fitBox(){
+    var r=this.shadowRoot; if(!r) return;
+    var parts=r.querySelectorAll('.note,.banner-wrap,.note *,.banner-wrap *'); if(!parts.length) return;
+    var hb=this.getBoundingClientRect(), cs=getComputedStyle(this);
+    var P={l:parseFloat(cs.paddingLeft)||0,t:parseFloat(cs.paddingTop)||0,r:parseFloat(cs.paddingRight)||0,b:parseFloat(cs.paddingBottom)||0};
+    var box={l:hb.left+P.l,t:hb.top+P.t,r:hb.right-P.r,b:hb.bottom-P.b};
+    var U={l:Infinity,t:Infinity,r:-Infinity,b:-Infinity};
+    for(var i=0;i<parts.length;i++){ var e=parts[i]; if(e.closest&&e.closest('[hidden]')) continue; var q=e.getBoundingClientRect(); if(!q.width&&!q.height) continue;
+      if(q.left<U.l)U.l=q.left; if(q.top<U.t)U.t=q.top; if(q.right>U.r)U.r=q.right; if(q.bottom>U.b)U.b=q.bottom; }
+    if(U.l===Infinity) return;
+    /* room for the soft shadow and the little lift on hover */
+    var need={l:Math.max(0,box.l-U.l)+8, t:Math.max(0,box.t-U.t)+8, r:Math.max(0,U.r-box.r)+8, b:Math.max(0,U.b-box.b)+16};
+    var changed=false;
+    ['l','t','r','b'].forEach(function(k){ need[k]=Math.ceil(need[k]); if(Math.abs(need[k]-P[k])>1) changed=true; });
+    if(!changed) return;
+    this._fitN=(this._fitN||0)+1; if(this._fitN>6) return;
+    this.style.setProperty('padding-left',need.l+'px','important'); this.style.setProperty('padding-right',need.r+'px','important');
+    this.style.setProperty('padding-top',need.t+'px','important'); this.style.setProperty('padding-bottom',need.b+'px','important');
+    var self=this; clearTimeout(this._fitReset); this._fitReset=setTimeout(function(){ self._fitN=0; },800);
   }
   initPop(){
     var self=this, notes=this.shadowRoot?this.shadowRoot.querySelectorAll('.note'):[];
@@ -241,7 +272,7 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
   <p>order by tuesday night, collect at the weekend, and if you'd rather swap than pay, we're always up for a barter.</p>
   <div class="sign">see you soon,<strong>the bloom &amp; bake crew</strong></div>
 </article>
-`; this.applyTilt(); this.initPop(); var me=this; setTimeout(function(){me.applyTilt()},300);
+`; this.applyTilt(); this.initPop(); this.initFit(); var me=this; setTimeout(function(){me.applyTilt()},300);
   }
 }
 if(!customElements.get('bloom-letter')) customElements.define('bloom-letter', BloomLetter);
@@ -311,7 +342,7 @@ h2{margin-bottom:22px}
     </ul>
   </div>
 </article>
-`; this.applyTilt(); this.initPop(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applySpecials();
+`; this.applyTilt(); this.initPop(); this.initFit(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applySpecials();
   }
   static get observedAttributes(){ return ['tilt','data-tilt','specials']; }
   attributeChangedCallback(n){ if(n==='tilt'||n==='data-tilt'){ this.applyTilt(); return; } this.applySpecials(); }
@@ -410,7 +441,7 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
     <p class="lead">we're planning the next menu. the order date will be up here shortly.</p>
   </div>
 </article>
-`; this.applyTilt(); this.initPop(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applyDrops(); this.applyLink();
+`; this.applyTilt(); this.initPop(); this.initFit(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applyDrops(); this.applyLink();
   }
   static get observedAttributes(){ return ['tilt','data-tilt','drops','now','link']; }
   attributeChangedCallback(n){ if(n==='tilt'||n==='data-tilt'){ this.applyTilt(); return; } this.applyDrops(); this.applyLink(); }
@@ -477,7 +508,7 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
   <p id="crumbs-btn" hidden><a class="shop-link" href="https://www.bloomandbake.co/category/all-products" target="_top"><span class="t">first come, first served</span><svg class="arrow" viewBox="0 0 28 14" aria-hidden="true"><path d="M1.5 7.6c6-.9 14-.5 22.5-.4M18.5 2.2c2 1.8 4.2 3.4 6.4 5-2.3 1.3-4.6 2.9-6.6 4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
   <p class="crumbs-when" id="crumbs-when" hidden>opens wed</p>
 </article>
-`; this.applyTilt(); this.initPop(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applyLink(); this.applyCrumbs();
+`; this.applyTilt(); this.initPop(); this.initFit(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applyLink(); this.applyCrumbs();
   }
   static get observedAttributes(){ return ['tilt','data-tilt','link','drops','now']; }
   attributeChangedCallback(n){ if(n==='tilt'||n==='data-tilt'){ this.applyTilt(); return; } this.applyLink(); this.applyCrumbs(); }
@@ -524,7 +555,7 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
 .tape{position:absolute;top:-12px;left:50%;width:96px;height:26px;margin-left:-48px;background:rgba(236,142,76,.28);transform:rotate(-3deg)}
 @media (prefers-reduced-motion:reduce){.note{transition:none}.note:hover{transform:rotate(var(--tilt))}}
 
-.note{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 18px;max-width:520px}
+.note{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 18px}
 .tape-l,.tape-r{top:6px;width:84px;height:24px;margin-left:0}
 .tape-l{left:-22px;transform:rotate(-36deg)}
 .tape-r{left:auto;right:-22px;transform:rotate(36deg)}
@@ -564,7 +595,7 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
     <p class="address">to: the kitchen table, peckham</p>
   </div>
 </article>
-`; this.applyTilt(); this.initPop(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applyLink();
+`; this.applyTilt(); this.initPop(); this.initFit(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applyLink();
   }
   static get observedAttributes(){ return ['tilt','data-tilt','link']; }
   attributeChangedCallback(n){ if(n==='tilt'||n==='data-tilt'){ this.applyTilt(); return; } this.applyLink(); }
@@ -606,7 +637,7 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
 .tape.lilac{background:var(--lilac)}
 h2{font-size:28px!important;line-height:1.1}
 
-.note.polaroid{background:#fff;padding:14px 14px 18px;text-align:center;width:320px;max-width:100%;box-sizing:border-box;margin:0 auto}
+.note.polaroid{background:#fff;padding:4.4% 4.4% 5.6%;text-align:center;width:100%;box-sizing:border-box;margin:0 auto}
 .polaroid .cap{height:84px;display:flex;flex-direction:column;justify-content:center;overflow:hidden}
 .polaroid img,.polaroid .ph{display:block;width:100%;aspect-ratio:1/1;object-fit:cover}
 .polaroid .ph{background:var(--cream);border:2px dashed var(--rule);display:grid;place-items:center;font-size:14px;color:var(--walnut);padding:20px;box-sizing:border-box}
@@ -622,7 +653,7 @@ h2{font-size:28px!important;line-height:1.1}
     <p class="role" id="role">what you make</p>
   </div>
 </figure>
-`; this.applyTilt(); this.initPop(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applyPhoto();
+`; this.applyTilt(); this.initPop(); this.initFit(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applyPhoto();
   }
   static get observedAttributes(){ return ['tilt','data-tilt','photo','name','role','tape','alt']; }
   attributeChangedCallback(n){ if(n==='tilt'||n==='data-tilt'){ this.applyTilt(); return; } this.applyPhoto(); }
@@ -720,7 +751,7 @@ h2{font-size:28px!important;line-height:1.1}
     <p>we recently did the florals for a wedding in chicago, and we're always up for more of that. got an idea? hit us up.</p>
   </article>
 </div>
-`; this.applyTilt(); this.initPop(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applyLink();
+`; this.applyTilt(); this.initPop(); this.initFit(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applyLink();
   }
   static get observedAttributes(){ return ['tilt','data-tilt','link']; }
   attributeChangedCallback(n){ if(n==='tilt'||n==='data-tilt'){ this.applyTilt(); return; } this.applyLink(); }
@@ -760,7 +791,7 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
 [hidden]{display:none!important}
 .tape.lilac{background:var(--lilac)}
 h2{font-size:28px!important;line-height:1.1}
-.banner-wrap{position:relative;max-width:900px;margin:0 auto;transform:rotate(var(--tilt));filter:drop-shadow(0 8px 10px rgba(53,38,27,.18))}
+.banner-wrap{position:relative;margin:0 auto;transform:rotate(var(--tilt));filter:drop-shadow(0 8px 10px rgba(53,38,27,.18))}
 .banner-wrap .corner-tl,.banner-wrap .corner-tr{top:2px;width:86px;height:24px;margin-left:0}
 .banner-wrap .corner-tl{left:-20px;transform:rotate(-34deg)}
 .banner-wrap .corner-tr{left:auto;right:-20px;transform:rotate(34deg)}
@@ -777,7 +808,7 @@ h2{font-size:28px!important;line-height:1.1}
   <span class="tape corner-tl" aria-hidden="true"></span>
   <span class="tape lilac corner-tr" aria-hidden="true"></span>
 </aside>
-`; this.applyTilt(); this.initPop(); var me=this; setTimeout(function(){me.applyTilt()},300);
+`; this.applyTilt(); this.initPop(); this.initFit(); var me=this; setTimeout(function(){me.applyTilt()},300);
   }
 }
 if(!customElements.get('bloom-ps')) customElements.define('bloom-ps', BloomPs);
@@ -814,7 +845,7 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
 [hidden]{display:none!important}
 .tape.lilac{background:var(--lilac)}
 h2{font-size:28px!important;line-height:1.1}
-.banner-wrap{position:relative;max-width:900px;margin:0 auto;transform:rotate(var(--tilt));filter:drop-shadow(0 8px 10px rgba(53,38,27,.18))}
+.banner-wrap{position:relative;margin:0 auto;transform:rotate(var(--tilt));filter:drop-shadow(0 8px 10px rgba(53,38,27,.18))}
 .banner-wrap .corner-tl,.banner-wrap .corner-tr{top:2px;width:86px;height:24px;margin-left:0}
 .banner-wrap .corner-tl{left:-20px;transform:rotate(-34deg)}
 .banner-wrap .corner-tr{left:auto;right:-20px;transform:rotate(34deg)}
@@ -832,7 +863,7 @@ h2{font-size:28px!important;line-height:1.1}
   <span class="tape corner-tl" aria-hidden="true"></span>
   <span class="tape lilac corner-tr" aria-hidden="true"></span>
 </aside>
-`; this.applyTilt(); this.initPop(); var me=this; setTimeout(function(){me.applyTilt()},300);
+`; this.applyTilt(); this.initPop(); this.initFit(); var me=this; setTimeout(function(){me.applyTilt()},300);
   }
 }
 if(!customElements.get('bloom-barter-intro')) customElements.define('bloom-barter-intro', BloomBarterIntro);
@@ -910,7 +941,7 @@ h2{font-size:28px!important;line-height:1.1}
     <ul class="swaps"><li>2\u20133 lessons of something you're good at</li><li>studio space or time</li><li>artwork</li></ul>
   </article>
 </div>
-`; this.applyTilt(); this.initPop(); var me=this; setTimeout(function(){me.applyTilt()},300);
+`; this.applyTilt(); this.initPop(); this.initFit(); var me=this; setTimeout(function(){me.applyTilt()},300);
   }
 }
 if(!customElements.get('bloom-tiers')) customElements.define('bloom-tiers', BloomTiers);
@@ -981,7 +1012,7 @@ h2{font-size:28px!important;line-height:1.1}
     <figcaption id="caption">write your trade here</figcaption>
   </figure>
 </div>
-`; this.applyTilt(); this.initPop(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applyPhoto();
+`; this.applyTilt(); this.initPop(); this.initFit(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applyPhoto();
   }
   static get observedAttributes(){ return ['tilt','data-tilt','photo','caption','alt']; }
   attributeChangedCallback(n){ if(n==='tilt'||n==='data-tilt'){ this.applyTilt(); return; } this.applyPhoto(); }
@@ -1034,7 +1065,7 @@ h2{font-size:28px!important;line-height:1.1}
 .dots li{padding-left:16px;position:relative;margin-bottom:4px}
 .dots li::before{content:"";position:absolute;left:2px;top:.75em;width:6px;height:6px;border-radius:50%;background:var(--tangerine)}
 
-.note.sticky{background:var(--sticky);max-width:720px;margin:0 auto}
+.note.sticky{background:var(--sticky);margin:0 auto}
 .sticky h2{margin-bottom:10px!important}
 </style>
 <article class="note sticky">
@@ -1047,7 +1078,7 @@ h2{font-size:28px!important;line-height:1.1}
     <li>we're also open to trades for a multi-month subscription!</li>
   </ul>
 </article>
-`; this.applyTilt(); this.initPop(); var me=this; setTimeout(function(){me.applyTilt()},300);
+`; this.applyTilt(); this.initPop(); this.initFit(); var me=this; setTimeout(function(){me.applyTilt()},300);
   }
 }
 if(!customElements.get('bloom-good-to-know')) customElements.define('bloom-good-to-know', BloomGoodToKnow);
@@ -1081,57 +1112,65 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
 .tape{position:absolute;top:-12px;left:50%;width:96px;height:26px;margin-left:-48px;background:rgba(236,142,76,.28);transform:rotate(-3deg)}
 @media (prefers-reduced-motion:reduce){.note{transition:none}.note:hover{transform:rotate(var(--tilt))}}
 
-:host{padding:0!important;color:#9A7BD1;line-height:0;height:100%;min-height:8px}
-.divider svg{width:100%;height:100%;max-height:none}
-svg{display:block;width:100%;height:auto;max-height:100%;overflow:visible;transform:rotate(var(--tilt))}
+:host{padding:0!important;color:#9A7BD1;line-height:0;position:relative;height:100%;min-height:8px;overflow:visible}
+svg{position:absolute;left:50%;top:50%;display:block;overflow:visible;transform-origin:50% 50%}
 path{fill:none;stroke:currentColor;stroke-width:var(--w,3);stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
 .draw path{stroke-dasharray:var(--len);stroke-dashoffset:var(--len)}
 .draw.go path{transition:stroke-dashoffset 1.4s cubic-bezier(.4,.1,.2,1);stroke-dashoffset:0}
 @media (prefers-reduced-motion:reduce){.draw path{stroke-dasharray:none;stroke-dashoffset:0}}
 </style>
 <svg id="svg" viewBox="0 0 220 50" aria-hidden="true"><path id="p" d="M6 26c13-19 24-19 36 0s24 19 36 0 24-19 36 0 24 19 36 0 24-19 36 0 22 17 34 2"/></svg>
-`; this.applyTilt(); this.initPop(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applyDoodle();
+`; this.applyTilt(); this.initPop(); this.initFit(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applyDoodle();
   }
   static get observedAttributes(){ return ['tilt','data-tilt','shape','color','weight','animate','size','wave']; }
   attributeChangedCallback(n){ if(n==='tilt'||n==='data-tilt'){ this.applyTilt(); return; } this.applyDoodle(); }
   /* shape: squiggle, underline, loops, circle, star, sparkle, swirl, heart, arrow, flower, zigzag, bracket
-     color: any colour (default purple #9A7BD1)   weight: line thickness, default 3   animate: "draw"
-     dividers (squiggle, zigzag, loops, underline) stretch to the box width and repeat;
-     size: their height in px (default: the box height)   wave: px per wave */
+     color: any colour (default purple)   weight: line thickness (default 3)   animate: "draw"   tilt: degrees
+     dividers (squiggle, zigzag, loops, underline) stretch to the box width and repeat the pattern;
+     size: their height in px   wave: px per wave.
+     the drawing always shrinks to fit inside its box, even when tilted, so nothing gets cut off. */
   applyDoodle(){
     var r=this.shadowRoot; if(!r) return;
     var D={"squiggle": ["0 0 220 50", "M6 26c13-19 24-19 36 0s24 19 36 0 24-19 36 0 24 19 36 0 24-19 36 0 22 17 34 2"], "underline": ["0 0 220 50", "M8 22c52-7 118-10 204-4M24 36c48-5 104-6 170-2"], "loops": ["0 0 240 70", "M6 46c18 2 30-6 36-18 5-10-4-18-11-10-8 9 3 26 21 26s30-12 36-24c5-10-4-18-11-10-8 9 3 26 21 26s30-12 36-24c5-10-4-18-11-10-8 9 3 26 21 26s26-8 36-14"], "circle": ["0 0 200 120", "M118 14C72 6 18 22 12 58c-6 34 40 52 92 50 52-2 88-22 84-52-4-30-46-44-92-40-26 2-44 8-56 16"], "star": ["0 0 100 100", "M50 8c3 14 6 26 12 32 8 3 20 4 32 6-10 8-20 14-24 22 0 10 4 20 6 26-10-6-18-12-26-12s-18 6-28 12c3-8 7-17 7-26-5-8-15-14-25-22 12-2 24-3 32-6 7-6 10-18 14-32z"], "sparkle": ["0 0 100 100", "M44 10c2 18 6 28 26 32-20 4-24 14-26 34-2-20-6-30-26-34 20-4 24-14 26-32zM78 62c1 8 3 12 12 14-9 2-11 6-12 14-1-8-3-12-12-14 9-2 11-6 12-14zM20 78a2.5 2.5 0 1 0 .1 0"], "swirl": ["0 0 100 100", "M52 50c-2-6 6-10 10-4 6 8-4 18-14 16-14-3-16-22-6-30 14-12 36-4 38 16 3 22-18 36-38 32-26-5-34-34-20-52"], "heart": ["0 0 110 100", "M55 88C30 70 10 54 10 34 10 18 22 10 34 12c10 2 16 10 21 20 5-11 12-19 23-20 13-1 23 9 22 24-2 22-22 36-45 52"], "arrow": ["0 0 200 80", "M10 58c26-30 66-44 110-40 22 2 40 8 58 20M160 18c8 6 14 14 20 22-10 2-20 4-28 8"], "flower": ["0 0 100 100", "M50 46c-6-14-4-30 0-36 6 6 8 22 0 36zM54 50c14-6 30-4 36 0-6 6-22 8-36 0zM50 54c6 14 4 30 0 36-6-6-8-22 0-36zM46 50c-14 6-30 4-36 0 6-6 22-8 36 0zM50 50a4 4 0 1 0 .1 0"], "zigzag": ["0 0 220 50", "M6 34l18-16 18 16 18-16 18 16 18-16 18 16 18-16 18 16 18-16 18 16 18-16"], "bracket": ["0 0 60 160", "M44 8c-14 2-20 8-20 22v28c0 10-6 18-16 22 10 4 16 12 16 22v28c0 14 6 20 20 22"]};
-    var s=(this.getAttribute('shape')||'squiggle').toLowerCase().trim(); var d=D[s]||D.squiggle;
-    var svg=r.getElementById('svg'), p=r.getElementById('p'), self=this;
-    var DIV={squiggle:1,zigzag:1,loops:1,underline:1};
-    if(DIV[s]){
-      /* dividers: stretch to the box width, keep their own height, repeat the pattern */
-      svg.parentNode.classList&&r.host&&r.host.classList.add('divider');
-      svg.classList.add('div'); svg.setAttribute('preserveAspectRatio','none');
-      svg.style.width='100%'; svg.style.height='100%';
-      var draw=function(){
-        var size=parseFloat(self.getAttribute('size'))||0;
-        if(size){ svg.style.height=size+'px'; self.style.height='auto'; } else { svg.style.height='100%'; self.style.height=''; }
-        var b=self.getBoundingClientRect(), W=Math.max(40,Math.round(b.width)), Hb=Math.round(b.height);
-        var H=Math.max(10, size || (Hb>8&&Hb<400 ? Hb : (s==='loops'?36:22)));
-        if(!size&&!(Hb>8&&Hb<400)){ svg.style.height=H+'px'; self.style.height='auto'; }
-        var wave=parseFloat(self.getAttribute('wave'))||(s==='loops'?34:(s==='zigzag'?28:40));
-        var pad=4, mid=H/2, a=Math.max(2,H/2-pad), x=pad, out='';
-        if(s==='squiggle'){ out='M'+x+' '+mid+'q'+(wave/4)+' '+(-a)+' '+(wave/2)+' 0'; x+=wave/2; while(x+wave/2<=W-pad){ out+='t'+(wave/2)+' 0'; x+=wave/2; } }
-        else if(s==='zigzag'){ out='M'+x+' '+(mid+a); var up=true; while(x+wave/2<=W-pad){ x+=wave/2; out+='L'+x+' '+(up?mid-a:mid+a); up=!up; } }
-        else if(s==='loops'){ var R=wave/(2*Math.PI), Dd=Math.min(a, R*1.9), pts=[], tt=0, x0=pad+Dd;
-          while(true){ var px=x0+R*tt-Dd*Math.sin(tt), py=mid+Dd*Math.cos(tt)*-1+Dd*0; if(px>W-pad-Dd) break; pts.push(px.toFixed(1)+' '+(mid-Dd*Math.cos(tt)).toFixed(1)); tt+=0.18; }
-          out='M'+pts.join('L'); }
-        else { var y1=H*0.38, y2=H*0.72; out='M'+pad+' '+y1+'C'+(W*0.3)+' '+(y1-2)+' '+(W*0.7)+' '+(y1-3)+' '+(W-pad)+' '+(y1+1)+'M'+(W*0.08)+' '+y2+'C'+(W*0.35)+' '+(y2-2)+' '+(W*0.65)+' '+(y2-2)+' '+(W*0.9)+' '+(y2); }
-        svg.setAttribute('viewBox','0 0 '+W+' '+H); p.setAttribute('d',out);
-      };
-      draw();
-      if(!this._ro&&'ResizeObserver' in window){ this._ro=new ResizeObserver(function(){ draw(); }); this._ro.observe(this); }
-    } else {
-      svg.removeAttribute('preserveAspectRatio'); svg.setAttribute('viewBox',d[0]); p.setAttribute('d',d[1]);
-    }
-    var c=this.getAttribute('color'); this.style.color = c ? (c.toLowerCase()==='orange'?'#EC8E4C':c.toLowerCase()==='purple'||c.toLowerCase()==='lilac'?'#9A7BD1':c.toLowerCase()==='brown'?'#8A5A34':c) : '';
+    var self=this, s=(this.getAttribute('shape')||'squiggle').toLowerCase().trim(); if(!D[s]) s='squiggle';
+    var svg=r.getElementById('svg'), p=r.getElementById('p');
+    var DIV={squiggle:1,zigzag:1,loops:1,underline:1}[s];
+    var c=(this.getAttribute('color')||'').toLowerCase();
+    this.style.color = !c ? '' : c==='orange'?'#EC8E4C' : (c==='purple'||c==='lilac')?'#9A7BD1' : c==='brown'?'#8A5A34' : this.getAttribute('color');
     var w=this.getAttribute('weight'); svg.style.setProperty('--w', w?String(parseFloat(w)||3):'3');
+    function divPath(L,H){
+      var wave=parseFloat(self.getAttribute('wave'))||(s==='loops'?34:(s==='zigzag'?28:40));
+      var pad=3, mid=H/2, a=Math.max(2,H/2-pad), x=pad, out='';
+      if(s==='squiggle'){ out='M'+x+' '+mid+'q'+(wave/4)+' '+(-a)+' '+(wave/2)+' 0'; x+=wave/2; while(x+wave/2<=L-pad){ out+='t'+(wave/2)+' 0'; x+=wave/2; } }
+      else if(s==='zigzag'){ out='M'+x+' '+(mid+a); var up=true; while(x+wave/2<=L-pad){ x+=wave/2; out+='L'+x+' '+(up?mid-a:mid+a); up=!up; } }
+      else if(s==='loops'){ var R=wave/(2*Math.PI), Dd=Math.min(a,R*1.9), pts=[], tt=0, x0=pad+Dd;
+        while(true){ var px=x0+R*tt-Dd*Math.sin(tt); if(px>L-pad-Dd) break; pts.push(px.toFixed(1)+' '+(mid-Dd*Math.cos(tt)).toFixed(1)); tt+=0.18; }
+        out='M'+pts.join('L'); }
+      else { var y1=H*0.38, y2=H*0.72; out='M'+pad+' '+y1+'C'+(L*0.3)+' '+(y1-2)+' '+(L*0.7)+' '+(y1-3)+' '+(L-pad)+' '+(y1+1)+'M'+(L*0.08)+' '+y2+'C'+(L*0.35)+' '+(y2-2)+' '+(L*0.65)+' '+(y2-2)+' '+(L*0.9)+' '+y2; }
+      return out;
+    }
+    function layout(){
+      var deg=parseFloat(self._tilt||self.getAttribute('tilt')||0)||0, th=deg*Math.PI/180, cs=Math.abs(Math.cos(th)), sn=Math.abs(Math.sin(th));
+      self.style.height=''; var b=self.getBoundingClientRect(); var BW=Math.max(20,b.width), BH=b.height, auto=!(BH>8);
+      var vw,vh;
+      if(DIV){
+        var H=parseFloat(self.getAttribute('size'))||(auto||BH>400 ? (s==='loops'?36:22) : null);
+        if(!H){ /* band height from the box: solve so the tilted band fits */ H=Math.max(10,Math.min(BH,(s==='loops'?60:40))); if(sn>0.01) H=Math.min(H,(s==='loops'?36:22)); }
+        var L = sn<0.01 ? BW : Math.min((BW-H*sn)/cs, auto ? Infinity : (BH-H*cs)/sn);
+        L=Math.max(30,Math.floor(L));
+        vw=L; vh=H; svg.setAttribute('viewBox','0 0 '+L+' '+H); p.setAttribute('d',divPath(L,H));
+        if(auto) self.style.height=Math.ceil(L*sn+H*cs+6)+'px';
+      } else {
+        var v=D[s][0].split(' ').map(Number); vw=v[2]; vh=v[3]; svg.setAttribute('viewBox',D[s][0]); p.setAttribute('d',D[s][1]);
+        var rr=vw/vh, h0 = auto ? BW/(rr*cs+sn) : Math.min(BW/(rr*cs+sn), BH/(rr*sn+cs));
+        h0=Math.max(4,h0*0.96); vh=h0; vw=h0*rr;
+        if(auto) self.style.height=Math.ceil(vw*sn+vh*cs+4)+'px';
+      }
+      svg.style.width=vw+'px'; svg.style.height=vh+'px';
+      svg.style.transform='translate(-50%,-50%) rotate('+deg+'deg)';
+    }
+    this._relayout=layout; layout();
+    if(!this._ro&&'ResizeObserver' in window){ var last=''; this._ro=new ResizeObserver(function(){ var b=self.getBoundingClientRect(), k=Math.round(b.width)+'x'+(self.style.height?'a':Math.round(b.height)); if(k!==last){ last=k; layout(); } }); this._ro.observe(this); }
     if((this.getAttribute('animate')||'').toLowerCase()==='draw' && !this._drawn){
       this._drawn=true; var len=Math.ceil(p.getTotalLength?p.getTotalLength():600)+10;
       svg.style.setProperty('--len',len); svg.classList.add('draw');
