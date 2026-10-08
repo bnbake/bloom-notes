@@ -1081,7 +1081,8 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
 .tape{position:absolute;top:-12px;left:50%;width:96px;height:26px;margin-left:-48px;background:rgba(236,142,76,.28);transform:rotate(-3deg)}
 @media (prefers-reduced-motion:reduce){.note{transition:none}.note:hover{transform:rotate(var(--tilt))}}
 
-:host{padding:0!important;color:#9A7BD1;line-height:0}
+:host{padding:0!important;color:#9A7BD1;line-height:0;height:100%;min-height:8px}
+.divider svg{width:100%;height:100%;max-height:none}
 svg{display:block;width:100%;height:auto;max-height:100%;overflow:visible;transform:rotate(var(--tilt))}
 path{fill:none;stroke:currentColor;stroke-width:var(--w,3);stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
 .draw path{stroke-dasharray:var(--len);stroke-dashoffset:var(--len)}
@@ -1091,16 +1092,44 @@ path{fill:none;stroke:currentColor;stroke-width:var(--w,3);stroke-linecap:round;
 <svg id="svg" viewBox="0 0 220 50" aria-hidden="true"><path id="p" d="M6 26c13-19 24-19 36 0s24 19 36 0 24-19 36 0 24 19 36 0 24-19 36 0 22 17 34 2"/></svg>
 `; this.applyTilt(); this.initPop(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applyDoodle();
   }
-  static get observedAttributes(){ return ['tilt','data-tilt','shape','color','weight','animate']; }
+  static get observedAttributes(){ return ['tilt','data-tilt','shape','color','weight','animate','size','wave']; }
   attributeChangedCallback(n){ if(n==='tilt'||n==='data-tilt'){ this.applyTilt(); return; } this.applyDoodle(); }
   /* shape: squiggle, underline, loops, circle, star, sparkle, swirl, heart, arrow, flower, zigzag, bracket
-     color: any colour (default purple #9A7BD1)   weight: line thickness, default 3   animate: "draw" */
+     color: any colour (default purple #9A7BD1)   weight: line thickness, default 3   animate: "draw"
+     dividers (squiggle, zigzag, loops, underline) stretch to the box width and repeat;
+     size: their height in px (default: the box height)   wave: px per wave */
   applyDoodle(){
     var r=this.shadowRoot; if(!r) return;
     var D={"squiggle": ["0 0 220 50", "M6 26c13-19 24-19 36 0s24 19 36 0 24-19 36 0 24 19 36 0 24-19 36 0 22 17 34 2"], "underline": ["0 0 220 50", "M8 22c52-7 118-10 204-4M24 36c48-5 104-6 170-2"], "loops": ["0 0 240 70", "M6 46c18 2 30-6 36-18 5-10-4-18-11-10-8 9 3 26 21 26s30-12 36-24c5-10-4-18-11-10-8 9 3 26 21 26s30-12 36-24c5-10-4-18-11-10-8 9 3 26 21 26s26-8 36-14"], "circle": ["0 0 200 120", "M118 14C72 6 18 22 12 58c-6 34 40 52 92 50 52-2 88-22 84-52-4-30-46-44-92-40-26 2-44 8-56 16"], "star": ["0 0 100 100", "M50 8c3 14 6 26 12 32 8 3 20 4 32 6-10 8-20 14-24 22 0 10 4 20 6 26-10-6-18-12-26-12s-18 6-28 12c3-8 7-17 7-26-5-8-15-14-25-22 12-2 24-3 32-6 7-6 10-18 14-32z"], "sparkle": ["0 0 100 100", "M44 10c2 18 6 28 26 32-20 4-24 14-26 34-2-20-6-30-26-34 20-4 24-14 26-32zM78 62c1 8 3 12 12 14-9 2-11 6-12 14-1-8-3-12-12-14 9-2 11-6 12-14zM20 78a2.5 2.5 0 1 0 .1 0"], "swirl": ["0 0 100 100", "M52 50c-2-6 6-10 10-4 6 8-4 18-14 16-14-3-16-22-6-30 14-12 36-4 38 16 3 22-18 36-38 32-26-5-34-34-20-52"], "heart": ["0 0 110 100", "M55 88C30 70 10 54 10 34 10 18 22 10 34 12c10 2 16 10 21 20 5-11 12-19 23-20 13-1 23 9 22 24-2 22-22 36-45 52"], "arrow": ["0 0 200 80", "M10 58c26-30 66-44 110-40 22 2 40 8 58 20M160 18c8 6 14 14 20 22-10 2-20 4-28 8"], "flower": ["0 0 100 100", "M50 46c-6-14-4-30 0-36 6 6 8 22 0 36zM54 50c14-6 30-4 36 0-6 6-22 8-36 0zM50 54c6 14 4 30 0 36-6-6-8-22 0-36zM46 50c-14 6-30 4-36 0 6-6 22-8 36 0zM50 50a4 4 0 1 0 .1 0"], "zigzag": ["0 0 220 50", "M6 34l18-16 18 16 18-16 18 16 18-16 18 16 18-16 18 16 18-16 18 16 18-16"], "bracket": ["0 0 60 160", "M44 8c-14 2-20 8-20 22v28c0 10-6 18-16 22 10 4 16 12 16 22v28c0 14 6 20 20 22"]};
     var s=(this.getAttribute('shape')||'squiggle').toLowerCase().trim(); var d=D[s]||D.squiggle;
-    var svg=r.getElementById('svg'), p=r.getElementById('p');
-    svg.setAttribute('viewBox',d[0]); p.setAttribute('d',d[1]);
+    var svg=r.getElementById('svg'), p=r.getElementById('p'), self=this;
+    var DIV={squiggle:1,zigzag:1,loops:1,underline:1};
+    if(DIV[s]){
+      /* dividers: stretch to the box width, keep their own height, repeat the pattern */
+      svg.parentNode.classList&&r.host&&r.host.classList.add('divider');
+      svg.classList.add('div'); svg.setAttribute('preserveAspectRatio','none');
+      svg.style.width='100%'; svg.style.height='100%';
+      var draw=function(){
+        var size=parseFloat(self.getAttribute('size'))||0;
+        if(size){ svg.style.height=size+'px'; self.style.height='auto'; } else { svg.style.height='100%'; self.style.height=''; }
+        var b=self.getBoundingClientRect(), W=Math.max(40,Math.round(b.width)), Hb=Math.round(b.height);
+        var H=Math.max(10, size || (Hb>8&&Hb<400 ? Hb : (s==='loops'?36:22)));
+        if(!size&&!(Hb>8&&Hb<400)){ svg.style.height=H+'px'; self.style.height='auto'; }
+        var wave=parseFloat(self.getAttribute('wave'))||(s==='loops'?34:(s==='zigzag'?28:40));
+        var pad=4, mid=H/2, a=Math.max(2,H/2-pad), x=pad, out='';
+        if(s==='squiggle'){ out='M'+x+' '+mid+'q'+(wave/4)+' '+(-a)+' '+(wave/2)+' 0'; x+=wave/2; while(x+wave/2<=W-pad){ out+='t'+(wave/2)+' 0'; x+=wave/2; } }
+        else if(s==='zigzag'){ out='M'+x+' '+(mid+a); var up=true; while(x+wave/2<=W-pad){ x+=wave/2; out+='L'+x+' '+(up?mid-a:mid+a); up=!up; } }
+        else if(s==='loops'){ var R=wave/(2*Math.PI), Dd=Math.min(a, R*1.9), pts=[], tt=0, x0=pad+Dd;
+          while(true){ var px=x0+R*tt-Dd*Math.sin(tt), py=mid+Dd*Math.cos(tt)*-1+Dd*0; if(px>W-pad-Dd) break; pts.push(px.toFixed(1)+' '+(mid-Dd*Math.cos(tt)).toFixed(1)); tt+=0.18; }
+          out='M'+pts.join('L'); }
+        else { var y1=H*0.38, y2=H*0.72; out='M'+pad+' '+y1+'C'+(W*0.3)+' '+(y1-2)+' '+(W*0.7)+' '+(y1-3)+' '+(W-pad)+' '+(y1+1)+'M'+(W*0.08)+' '+y2+'C'+(W*0.35)+' '+(y2-2)+' '+(W*0.65)+' '+(y2-2)+' '+(W*0.9)+' '+(y2); }
+        svg.setAttribute('viewBox','0 0 '+W+' '+H); p.setAttribute('d',out);
+      };
+      draw();
+      if(!this._ro&&'ResizeObserver' in window){ this._ro=new ResizeObserver(function(){ draw(); }); this._ro.observe(this); }
+    } else {
+      svg.removeAttribute('preserveAspectRatio'); svg.setAttribute('viewBox',d[0]); p.setAttribute('d',d[1]);
+    }
     var c=this.getAttribute('color'); this.style.color = c ? (c.toLowerCase()==='orange'?'#EC8E4C':c.toLowerCase()==='purple'||c.toLowerCase()==='lilac'?'#9A7BD1':c.toLowerCase()==='brown'?'#8A5A34':c) : '';
     var w=this.getAttribute('weight'); svg.style.setProperty('--w', w?String(parseFloat(w)||3):'3');
     if((this.getAttribute('animate')||'').toLowerCase()==='draw' && !this._drawn){
