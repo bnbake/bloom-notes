@@ -196,8 +196,7 @@ class BloomNote extends HTMLElement {
     var self=this; if(this._fillOn||!BLOOM_FILL[this.tagName.toLowerCase()]||(this.getAttribute('fill')||'').toLowerCase()==='off') return;
     var r=this.shadowRoot, main=r&&Array.prototype.filter.call(r.children,function(c){ return c.matches&&c.matches('.note,.banner-wrap'); })[0]; if(!main) return;
     this._fillOn=true; this._fillMain=main;
-    r.querySelector('style').textContent+=':host(:not([data-bloom-pop])){height:100%;box-sizing:border-box}'
-      +':host(:not([data-bloom-pop])) > .note,:host(:not([data-bloom-pop])) > .banner-wrap{min-height:100%;zoom:var(--fz,1)}';
+    r.querySelector('style').textContent+=':host(:not([data-bloom-pop])) > .note,:host(:not([data-bloom-pop])) > .banner-wrap{zoom:var(--fz,1)}';
     var kick=function(){ var b=self.getBoundingClientRect(), k=Math.round(b.width)+'x'+Math.round(b.height), w=Math.round(b.width); if(w!==self._fillW){ self._fillW=w; self._fillAuto=false; } if(k!==self._fillKey){ self._fillKey=k; self._fillN=0; } bloomSchedule(self); };
     if('ResizeObserver' in window) new ResizeObserver(function(){ requestAnimationFrame(kick); }).observe(this);
     if('MutationObserver' in window) new MutationObserver(function(){ self._fillN=0; bloomSchedule(self); }).observe(main,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['hidden']});
@@ -205,15 +204,11 @@ class BloomNote extends HTMLElement {
     kick();
   }
   _fillMeasure(){
-    var m=this._fillMain; if(!m||!m.clientHeight||this._fillAuto) return null;
-    var hb=this.getBoundingClientRect(), hs=getComputedStyle(this), avail=hb.height-(parseFloat(hs.paddingTop)||0)-(parseFloat(hs.paddingBottom)||0);
-    if(avail<=0) return null;
-    /* how tall the writing is (top of the paper to the last line), compared with the room in the box */
-    var cs=getComputedStyle(m), z=parseFloat(this.style.getPropertyValue('--fz'))||1, mt=m.getBoundingClientRect().top, bottom=0, kids=m.children;
-    for(var i=0;i<kids.length;i++){ var k=kids[i]; var kc=getComputedStyle(k); if(kc.position==='absolute'||kc.position==='fixed'||kc.display==='none') continue;
-      var q=k.getBoundingClientRect(); if(!q.height) continue; var b=q.bottom+(parseFloat(kc.marginBottom)||0)*z; if(b>bottom) bottom=b; }
-    if(!bottom) return null;
-    return {ratio:(bottom-mt+(parseFloat(cs.paddingBottom)||0)*z)/avail, avail:avail};
+    /* the element is always exactly as tall as its content; only if the Wix box is set shorter than that
+       does the text shrink so nothing is cut off */
+    var p=this.parentElement; if(!this._fillMain||!p||this._fillAuto) return null;
+    var avail=p.clientHeight, h=this.getBoundingClientRect().height; if(!avail||!h) return null;
+    return {ratio:h/avail, avail:avail};
   }
   _fillApply(f){
     if(!f) return; var ratio=f.ratio, z=parseFloat(this.style.getPropertyValue('--fz'))||1, nz=z;
@@ -1233,7 +1228,7 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
 .tape{position:absolute;top:-12px;left:50%;width:96px;height:26px;margin-left:-48px;background:rgba(236,142,76,.28);transform:rotate(-3deg)}
 @media (prefers-reduced-motion:reduce){.note{transition:none}.note:hover{transform:rotate(var(--tilt))}}
 
-:host{padding:0!important;color:#9A7BD1;line-height:0;position:relative;height:100%;min-height:8px;overflow:visible}
+:host{padding:0!important;color:#9A7BD1;line-height:0;position:relative;min-height:8px;overflow:visible}
 svg{position:absolute;left:50%;top:50%;display:block;overflow:visible;transform-origin:50% 50%}
 path{fill:none;stroke:currentColor;stroke-width:var(--w,3);stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
 .draw path{stroke-dasharray:var(--len);stroke-dashoffset:var(--len)}
@@ -1272,7 +1267,7 @@ path{fill:none;stroke:currentColor;stroke-width:var(--w,3);stroke-linecap:round;
     }
     function layout(b){
       var deg=parseFloat(self._tilt||self.getAttribute('tilt')||0)||0, th=deg*Math.PI/180, cs=Math.abs(Math.cos(th)), sn=Math.abs(Math.sin(th));
-      var BW=Math.max(20,b.width), BH=b.height, auto=!(BH>8);
+      var BW=Math.max(20,b.width), BH=b.height, auto=true;   /* height always follows the drawing, so the Wix box can hug it */
       var vw,vh;
       if(DIV){
         var H=parseFloat(self.getAttribute('size'))||(auto||BH>400 ? (s==='loops'?36:22) : null);
