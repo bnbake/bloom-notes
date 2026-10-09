@@ -11,11 +11,11 @@
    ===================================================================== */
 
 /* your fonts, added to the page once (Jnr for headings, Agner for text).
-   numbers, & and \u00a3 are not in them, so they fall back to Gaegu / Delius. */
+   numbers, & and \u00a3 are not in them, so they fall back to Gaegu. */
 (function addFonts(){
   if (document.getElementById('bloom-fonts')) return;
   var gf=document.createElement('link'); gf.rel='stylesheet';
-  gf.href='https://fonts.googleapis.com/css2?family=Delius&family=Gaegu:wght@400;700&display=swap';
+  gf.href='https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap';
   document.head.appendChild(gf);
   var st=document.createElement('style'); st.id='bloom-fonts';
   st.textContent='@font-face{font-family:"Jnr";src:url(data:font/woff2;base64,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) format("woff2");font-display:swap}'+
@@ -226,7 +226,7 @@ class BloomLetter extends BloomNote {
     root.innerHTML = `<style>:host{
   /* ---- fonts ---- */
   --f-display:"Jnr","Gaegu",cursive;       /* headings */
-  --f-body:"Agner","Delius",sans-serif;       /* paragraphs */
+  --f-body:"Agner","Gaegu",cursive;       /* paragraphs */
   --f-script:"Jnr","Gaegu",cursive;         /* little handwritten bits */
   /* ---- colours (matched to bloomandbake.co) ---- */
   --paper:#FFFDF6; --sticky:#FDE9B8; --kraft:#E9D3AE; --cream:#FEFCEC;
@@ -286,7 +286,7 @@ class BloomDrops extends BloomNote {
     root.innerHTML = `<style>:host{
   /* ---- fonts ---- */
   --f-display:"Jnr","Gaegu",cursive;       /* headings */
-  --f-body:"Agner","Delius",sans-serif;       /* paragraphs */
+  --f-body:"Agner","Gaegu",cursive;       /* paragraphs */
   --f-script:"Jnr","Gaegu",cursive;         /* little handwritten bits */
   /* ---- colours (matched to bloomandbake.co) ---- */
   --paper:#FFFDF6; --sticky:#FDE9B8; --kraft:#E9D3AE; --cream:#FEFCEC;
@@ -370,7 +370,7 @@ class BloomDeadline extends BloomNote {
     root.innerHTML = `<style>:host{
   /* ---- fonts ---- */
   --f-display:"Jnr","Gaegu",cursive;       /* headings */
-  --f-body:"Agner","Delius",sans-serif;       /* paragraphs */
+  --f-body:"Agner","Gaegu",cursive;       /* paragraphs */
   --f-script:"Jnr","Gaegu",cursive;         /* little handwritten bits */
   /* ---- colours (matched to bloomandbake.co) ---- */
   --paper:#FFFDF6; --sticky:#FDE9B8; --kraft:#E9D3AE; --cream:#FEFCEC;
@@ -457,6 +457,10 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
 }
 if(!customElements.get('bloom-deadline')) customElements.define('bloom-deadline', BloomDeadline);
 
+/* bloom-deadline-popup: same card for a Wix lightbox, no tap-to-expand (the lightbox has its own close) */
+class BloomDeadlinePopup extends BloomDeadline { connectedCallback(){ this.setAttribute('popout','off'); super.connectedCallback(); } }
+if(!customElements.get('bloom-deadline-popup')) customElements.define('bloom-deadline-popup', BloomDeadlinePopup);
+
 /* ===================== bloom-crumbs ===================== */
 class BloomCrumbs extends BloomNote {
   connectedCallback(){
@@ -465,7 +469,7 @@ class BloomCrumbs extends BloomNote {
     root.innerHTML = `<style>:host{
   /* ---- fonts ---- */
   --f-display:"Jnr","Gaegu",cursive;       /* headings */
-  --f-body:"Agner","Delius",sans-serif;       /* paragraphs */
+  --f-body:"Agner","Gaegu",cursive;       /* paragraphs */
   --f-script:"Jnr","Gaegu",cursive;         /* little handwritten bits */
   /* ---- colours (matched to bloomandbake.co) ---- */
   --paper:#FFFDF6; --sticky:#FDE9B8; --kraft:#E9D3AE; --cream:#FEFCEC;
@@ -535,7 +539,7 @@ class BloomBarter extends BloomNote {
     root.innerHTML = `<style>:host{
   /* ---- fonts ---- */
   --f-display:"Jnr","Gaegu",cursive;       /* headings */
-  --f-body:"Agner","Delius",sans-serif;       /* paragraphs */
+  --f-body:"Agner","Gaegu",cursive;       /* paragraphs */
   --f-script:"Jnr","Gaegu",cursive;         /* little handwritten bits */
   /* ---- colours (matched to bloomandbake.co) ---- */
   --paper:#FFFDF6; --sticky:#FDE9B8; --kraft:#E9D3AE; --cream:#FEFCEC;
@@ -613,7 +617,7 @@ class BloomPolaroid extends BloomNote {
     root.innerHTML = `<style>:host{
   /* ---- fonts ---- */
   --f-display:"Jnr","Gaegu",cursive;       /* headings */
-  --f-body:"Agner","Delius",sans-serif;       /* paragraphs */
+  --f-body:"Agner","Gaegu",cursive;       /* paragraphs */
   --f-script:"Jnr","Gaegu",cursive;         /* little handwritten bits */
   /* ---- colours (matched to bloomandbake.co) ---- */
   --paper:#FFFDF6; --sticky:#FDE9B8; --kraft:#E9D3AE; --cream:#FEFCEC;
@@ -679,7 +683,7 @@ class BloomAbout extends BloomNote {
     root.innerHTML = `<style>:host{
   /* ---- fonts ---- */
   --f-display:"Jnr","Gaegu",cursive;       /* headings */
-  --f-body:"Agner","Delius",sans-serif;       /* paragraphs */
+  --f-body:"Agner","Gaegu",cursive;       /* paragraphs */
   --f-script:"Jnr","Gaegu",cursive;         /* little handwritten bits */
   /* ---- colours (matched to bloomandbake.co) ---- */
   --paper:#FFFDF6; --sticky:#FDE9B8; --kraft:#E9D3AE; --cream:#FEFCEC;
@@ -796,7 +800,7 @@ class BloomPs extends BloomNote {
     root.innerHTML = `<style>:host{
   /* ---- fonts ---- */
   --f-display:"Jnr","Gaegu",cursive;       /* headings */
-  --f-body:"Agner","Delius",sans-serif;       /* paragraphs */
+  --f-body:"Agner","Gaegu",cursive;       /* paragraphs */
   --f-script:"Jnr","Gaegu",cursive;         /* little handwritten bits */
   /* ---- colours (matched to bloomandbake.co) ---- */
   --paper:#FFFDF6; --sticky:#FDE9B8; --kraft:#E9D3AE; --cream:#FEFCEC;
@@ -850,7 +854,7 @@ class BloomBarterIntro extends BloomNote {
     root.innerHTML = `<style>:host{
   /* ---- fonts ---- */
   --f-display:"Jnr","Gaegu",cursive;       /* headings */
-  --f-body:"Agner","Delius",sans-serif;       /* paragraphs */
+  --f-body:"Agner","Gaegu",cursive;       /* paragraphs */
   --f-script:"Jnr","Gaegu",cursive;         /* little handwritten bits */
   /* ---- colours (matched to bloomandbake.co) ---- */
   --paper:#FFFDF6; --sticky:#FDE9B8; --kraft:#E9D3AE; --cream:#FEFCEC;
@@ -905,7 +909,7 @@ class BloomTiers extends BloomNote {
     root.innerHTML = `<style>:host{
   /* ---- fonts ---- */
   --f-display:"Jnr","Gaegu",cursive;       /* headings */
-  --f-body:"Agner","Delius",sans-serif;       /* paragraphs */
+  --f-body:"Agner","Gaegu",cursive;       /* paragraphs */
   --f-script:"Jnr","Gaegu",cursive;         /* little handwritten bits */
   /* ---- colours (matched to bloomandbake.co) ---- */
   --paper:#FFFDF6; --sticky:#FDE9B8; --kraft:#E9D3AE; --cream:#FEFCEC;
@@ -983,7 +987,7 @@ class BloomHowto extends BloomNote {
     root.innerHTML = `<style>:host{
   /* ---- fonts ---- */
   --f-display:"Jnr","Gaegu",cursive;       /* headings */
-  --f-body:"Agner","Delius",sans-serif;       /* paragraphs */
+  --f-body:"Agner","Gaegu",cursive;       /* paragraphs */
   --f-script:"Jnr","Gaegu",cursive;         /* little handwritten bits */
   /* ---- colours (matched to bloomandbake.co) ---- */
   --paper:#FFFDF6; --sticky:#FDE9B8; --kraft:#E9D3AE; --cream:#FEFCEC;
@@ -1066,7 +1070,7 @@ class BloomGoodToKnow extends BloomNote {
     root.innerHTML = `<style>:host{
   /* ---- fonts ---- */
   --f-display:"Jnr","Gaegu",cursive;       /* headings */
-  --f-body:"Agner","Delius",sans-serif;       /* paragraphs */
+  --f-body:"Agner","Gaegu",cursive;       /* paragraphs */
   --f-script:"Jnr","Gaegu",cursive;         /* little handwritten bits */
   /* ---- colours (matched to bloomandbake.co) ---- */
   --paper:#FFFDF6; --sticky:#FDE9B8; --kraft:#E9D3AE; --cream:#FEFCEC;
@@ -1120,7 +1124,7 @@ class BloomDoodle extends BloomNote {
     root.innerHTML = `<style>:host{
   /* ---- fonts ---- */
   --f-display:"Jnr","Gaegu",cursive;       /* headings */
-  --f-body:"Agner","Delius",sans-serif;       /* paragraphs */
+  --f-body:"Agner","Gaegu",cursive;       /* paragraphs */
   --f-script:"Jnr","Gaegu",cursive;         /* little handwritten bits */
   /* ---- colours (matched to bloomandbake.co) ---- */
   --paper:#FFFDF6; --sticky:#FDE9B8; --kraft:#E9D3AE; --cream:#FEFCEC;
