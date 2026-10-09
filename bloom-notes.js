@@ -127,6 +127,16 @@ function bloomShowDrop(root, dates, now){
 
 /* one shared layout pass per frame: every note/doodle is measured first, then all are updated,
    so the page is only re-laid-out once instead of once per element (faster loading) */
+/* \u270f\ufe0f collabs gallery photos, used on every page (home and about) with no page code needed.
+   one photo per line:  'link | caption',   (page code can still override with the collab-photos attribute) */
+var BLOOM_COLLAB_W='/v1/fit/w_900,h_900,q_80/photo.webp';   /* asks Wix for a smaller, faster copy */
+var BLOOM_COLLAB_PHOTOS=[
+  'https://static.wixstatic.com/media/8bf26a_35660b2a7ed94398818a65c063009630~mv2.png'+BLOOM_COLLAB_W+' | wedding florals',
+  'https://static.wixstatic.com/media/8bf26a_f20047fb4bd141b7aca540e2405944ed~mv2.png'+BLOOM_COLLAB_W+' | table settings',
+  'https://static.wixstatic.com/media/8bf26a_df6853437f1f4b58a3977f4ce216e963~mv2.png'+BLOOM_COLLAB_W+' | farewell party'
+].join(' ; ');
+try{ console.log('bloom-notes loaded (version 9 oct, with collabs gallery)'); }catch(e){}
+var BLOOM_FILL={'bloom-letter':1,'bloom-drops':1,'bloom-deadline':1,'bloom-deadline-popup':1,'bloom-crumbs':1,'bloom-barter':1,'bloom-ps':1,'bloom-barter-intro':1,'bloom-good-to-know':1};
 var bloomQ=[], bloomRaf=0;
 function bloomSchedule(el){ if(bloomQ.indexOf(el)<0) bloomQ.push(el); if(!bloomRaf) bloomRaf=requestAnimationFrame(bloomFlush); }
 function bloomFlush(){ bloomRaf=0; var q=bloomQ; bloomQ=[];
@@ -168,18 +178,47 @@ class BloomNote extends HTMLElement {
       var main=this.shadowRoot&&this.shadowRoot.querySelector('.note,.banner-wrap'); if(main) this._fitRO.observe(main); }
     if(document.fonts&&document.fonts.ready) document.fonts.ready.then(run);
     setTimeout(run,60); setTimeout(run,600);
+    this.initFill();
   }
   fitBox(){ bloomSchedule(this); }
-  /* scale a fixed-design note (e.g. the crumbs tag) to the width of its Wix box */
-  initScale(){
-    var self=this; if(this._scaleOn) return; this._scaleOn=true;
-    var go=function(){ var w=self.getBoundingClientRect().width; if(!w) return;
-      var z=Math.max(0.4,Math.min(1.4,(w-52)/300)); z=Math.round(z*100)/100;
-      if(String(z)!==self.style.getPropertyValue('--z')){ self.style.setProperty('--z',z); self._fitN=0; bloomSchedule(self); } };
-    if('ResizeObserver' in window) new ResizeObserver(function(){ requestAnimationFrame(go); }).observe(this);
-    go();
+  /* text wraps with the width; the paper stretches to fill the box height;
+     if the box is shorter than the text, the text shrinks a little so nothing gets cut off */
+  initFill(){
+    var self=this; if(this._fillOn||!BLOOM_FILL[this.tagName.toLowerCase()]||(this.getAttribute('fill')||'').toLowerCase()==='off') return;
+    var r=this.shadowRoot, main=r&&Array.prototype.filter.call(r.children,function(c){ return c.matches&&c.matches('.note,.banner-wrap'); })[0]; if(!main) return;
+    this._fillOn=true; this._fillMain=main;
+    r.querySelector('style').textContent+=':host(:not([data-bloom-pop])){height:100%;box-sizing:border-box}'
+      +':host(:not([data-bloom-pop])) > .note,:host(:not([data-bloom-pop])) > .banner-wrap{min-height:100%;zoom:var(--fz,1)}';
+    var kick=function(){ var b=self.getBoundingClientRect(), k=Math.round(b.width)+'x'+Math.round(b.height), w=Math.round(b.width); if(w!==self._fillW){ self._fillW=w; self._fillAuto=false; } if(k!==self._fillKey){ self._fillKey=k; self._fillN=0; } bloomSchedule(self); };
+    if('ResizeObserver' in window) new ResizeObserver(function(){ requestAnimationFrame(kick); }).observe(this);
+    if('MutationObserver' in window) new MutationObserver(function(){ self._fillN=0; bloomSchedule(self); }).observe(main,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['hidden']});
+    if(document.fonts&&document.fonts.ready) document.fonts.ready.then(kick);
+    kick();
   }
-  _measure(){
+  _fillMeasure(){
+    var m=this._fillMain; if(!m||!m.clientHeight||this._fillAuto) return null;
+    var hb=this.getBoundingClientRect(), hs=getComputedStyle(this), avail=hb.height-(parseFloat(hs.paddingTop)||0)-(parseFloat(hs.paddingBottom)||0);
+    if(avail<=0) return null;
+    /* how tall the writing is (top of the paper to the last line), compared with the room in the box */
+    var cs=getComputedStyle(m), z=parseFloat(this.style.getPropertyValue('--fz'))||1, mt=m.getBoundingClientRect().top, bottom=0, kids=m.children;
+    for(var i=0;i<kids.length;i++){ var k=kids[i]; var kc=getComputedStyle(k); if(kc.position==='absolute'||kc.position==='fixed'||kc.display==='none') continue;
+      var q=k.getBoundingClientRect(); if(!q.height) continue; var b=q.bottom+(parseFloat(kc.marginBottom)||0)*z; if(b>bottom) bottom=b; }
+    if(!bottom) return null;
+    return {ratio:(bottom-mt+(parseFloat(cs.paddingBottom)||0)*z)/avail, avail:avail};
+  }
+  _fillApply(f){
+    if(!f) return; var ratio=f.ratio, z=parseFloat(this.style.getPropertyValue('--fz'))||1, nz=z;
+    /* if shrinking the text made the box shorter too, the box grows with its content: no shrinking needed */
+    if(this._fillShrank&&f.avail<this._fillShrank-2){ this._fillAuto=true; this._fillShrank=0; this.style.removeProperty('--fz'); bloomSchedule(this); return; }
+    this._fillShrank=0;
+    if(ratio>1.03) nz=z*Math.max(0.8,Math.sqrt(1/ratio)*0.99);
+    else if(ratio<0.9&&z<1) nz=Math.min(1,z*Math.min(1.15,Math.sqrt(0.97/ratio)));
+    nz=Math.round(Math.max(0.4,nz)*100)/100;
+    if(Math.abs(nz-z)>=0.01&&(this._fillN=(this._fillN||0)+1)<=10){ if(nz<z) this._fillShrank=f.avail; this.style.setProperty('--fz',nz); bloomSchedule(this); }
+  }
+  _measure(){ return {fit:this._fitMeasure(), fill:this._fillOn?this._fillMeasure():null}; }
+  _apply(m){ if(!m) return; this._fitApply(m.fit); if(this._fillOn) this._fillApply(m.fill); }
+  _fitMeasure(){
     if(!this._fitOn) return null;
     var r=this.shadowRoot; if(!r) return null;
     var parts=r.querySelectorAll('.note,.banner-wrap,.note *,.banner-wrap *'); if(!parts.length) return null;
@@ -192,11 +231,14 @@ class BloomNote extends HTMLElement {
     if(U.l===Infinity) return null;
     /* room for the soft shadow and the little lift on hover */
     var need={l:Math.max(0,box.l-U.l)+8, t:Math.max(0,box.t-U.t)+8, r:Math.max(0,U.r-box.r)+8, b:Math.max(0,U.b-box.b)+16};
+    if(this._fillOn){ /* box height is set by Wix: bottom room only for the tilt, never for the text */
+      var tl=String(this._tilt||getComputedStyle(this._fillMain).getPropertyValue('--tilt')||'0'), dg=parseFloat(tl)||0; if(/rad/.test(tl)) dg=dg*180/Math.PI; if(/turn/.test(tl)) dg=dg*360;
+      need.b=Math.abs(Math.sin(dg*Math.PI/180))*hb.width/2+16; }
     var changed=false;
     ['l','t','r','b'].forEach(function(k){ need[k]=Math.ceil(need[k]); if(Math.abs(need[k]-P[k])>1) changed=true; });
     return changed ? need : null;
   }
-  _apply(need){
+  _fitApply(need){
     if(!need) return;
     this._fitN=(this._fitN||0)+1; if(this._fitN>6) return;
     this.style.setProperty('padding-left',need.l+'px','important'); this.style.setProperty('padding-right',need.r+'px','important');
@@ -526,9 +568,6 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
 .note:hover{box-shadow:none}
 .note::after{content:"";position:absolute;inset:0;z-index:-1;background:var(--kraft);border-radius:6px;clip-path:polygon(18% 0,82% 0,100% 12%,100% 100%,0 100%,0 12%)}
 .string{position:absolute;top:-50px;left:50%;width:130px;height:78px;margin-left:-30px;pointer-events:none}
-/* the whole tag scales with the box width (corner resizer), text and string included */
-.note{width:300px;margin:0 auto;zoom:var(--z,1)}
-.pop-card .note{zoom:1.15}
 .crumbs-when{font:400 20px/1.2 var(--f-display);color:var(--walnut);margin-top:10px!important}
 [hidden]{display:none!important}
 .note::before{content:"";position:absolute;top:16px;left:50%;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:var(--cream);box-shadow:inset 0 1px 2px rgba(53,38,27,.35)}
@@ -547,7 +586,7 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
   <p id="crumbs-btn" hidden><a class="shop-link" href="https://www.bloomandbake.co/category/all-products" target="_top"><span class="t">first come, first served</span><svg class="arrow" viewBox="0 0 28 14" aria-hidden="true"><path d="M1.5 7.6c6-.9 14-.5 22.5-.4M18.5 2.2c2 1.8 4.2 3.4 6.4 5-2.3 1.3-4.6 2.9-6.6 4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
   <p class="crumbs-when" id="crumbs-when" hidden>opens wed</p>
 </article>
-`; this.applyTilt(); this.initPop(); this.initFit(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applyLink(); this.applyCrumbs(); this.initScale();
+`; this.applyTilt(); this.initPop(); this.initFit(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applyLink(); this.applyCrumbs();
   }
   static get observedAttributes(){ return ['tilt','data-tilt','link','drops','now']; }
   attributeChangedCallback(n){ if(n==='tilt'||n==='data-tilt'){ this.applyTilt(); return; } this.applyLink(); this.applyCrumbs(); }
@@ -816,7 +855,7 @@ h2{font-size:28px!important;line-height:1.1}
      collab-photos: photos for the collabs gallery, as  url | caption ; url | caption  (caption optional) */
   applyLink(){ var r=this.shadowRoot; if(!r) return; var u=this.getAttribute('link'), a=r.querySelector('.postit:not(#collabs) .pill-link'); if(u&&a) a.href=u;
     var cl=this.getAttribute('collab-link'), ca=r.getElementById('collab-link'); if(ca){ if(cl){ ca.href=cl; ca.hidden=false; } else ca.hidden=true; }
-    var raw=this.getAttribute('collab-photos')||this.getAttribute('collab-photo')||'', items=[];
+    var raw=this.getAttribute('collab-photos')||this.getAttribute('collab-photo')||BLOOM_COLLAB_PHOTOS, items=[];
     try{ var j=JSON.parse(raw); if(Array.isArray(j)) items=j.map(function(x){ return typeof x==='string'?{src:x}:{src:x.src||x.url||x.photo,cap:x.caption||x.cap||''}; }); }catch(err){
       raw.split(/[;\n]+/).forEach(function(s){ s=s.trim(); if(!s) return; var p=s.split('|'); items.push({src:p[0].trim(),cap:(p[1]||'').trim()}); }); }
     items=items.filter(function(x){ return x&&x.src; });
