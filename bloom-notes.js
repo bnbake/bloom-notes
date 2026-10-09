@@ -136,7 +136,7 @@ var BLOOM_COLLAB_PHOTOS=[
   'https://static.wixstatic.com/media/8bf26a_df6853437f1f4b58a3977f4ce216e963~mv2.png'+BLOOM_COLLAB_W+' | farewell party'
 ].join(' ; ');
 try{ console.log('bloom-notes loaded (version 9 oct, with collabs gallery)'); }catch(e){}
-var BLOOM_FILL={'bloom-letter':1,'bloom-drops':1,'bloom-deadline':1,'bloom-deadline-popup':1,'bloom-crumbs':1,'bloom-barter':1,'bloom-ps':1,'bloom-barter-intro':1,'bloom-good-to-know':1};
+var BLOOM_FILL={'bloom-letter':1,'bloom-drops':1,'bloom-deadline':1,'bloom-deadline-popup':1,'bloom-barter':1,'bloom-ps':1,'bloom-barter-intro':1,'bloom-good-to-know':1};
 var bloomQ=[], bloomRaf=0;
 function bloomSchedule(el){ if(bloomQ.indexOf(el)<0) bloomQ.push(el); if(!bloomRaf) bloomRaf=requestAnimationFrame(bloomFlush); }
 function bloomFlush(){ bloomRaf=0; var q=bloomQ; bloomQ=[];
@@ -181,6 +181,15 @@ class BloomNote extends HTMLElement {
     this.initFill();
   }
   fitBox(){ bloomSchedule(this); }
+  /* scale a fixed-design note (e.g. the crumbs tag) to the width of its Wix box */
+  initScale(){
+    var self=this; if(this._scaleOn) return; this._scaleOn=true;
+    var go=function(){ var w=self.getBoundingClientRect().width; if(!w) return;
+      var z=Math.max(0.25,Math.min(1.4,(w-52)/300)); z=Math.round(z*100)/100;
+      if(String(z)!==self.style.getPropertyValue('--z')){ self.style.setProperty('--z',z); self._fitN=0; bloomSchedule(self); } };
+    if('ResizeObserver' in window) new ResizeObserver(function(){ requestAnimationFrame(go); }).observe(this);
+    go();
+  }
   /* text wraps with the width; the paper stretches to fill the box height;
      if the box is shorter than the text, the text shrinks a little so nothing gets cut off */
   initFill(){
@@ -267,6 +276,9 @@ class BloomNote extends HTMLElement {
     /* the page underneath stays exactly where it is: no scroll locking (which makes Wix jump to the top);
        scrolling is just blocked over the shade, and the spot is restored on close */
     var wrap=r.querySelector('.wrap'), card=r.querySelector('.pop-card'), sx=window.scrollX, sy=window.scrollY;
+    var saved=[], n=this; while(n){ if(n.nodeType===1&&(n.scrollTop||n.scrollLeft)) saved.push([n,n.scrollTop,n.scrollLeft]); n=n.parentNode||n.host; }
+    var se=document.scrollingElement||document.documentElement; saved.push([se,se.scrollTop,se.scrollLeft]);
+    function keep(){ saved.forEach(function(s){ if(Math.abs(s[0].scrollTop-s[1])>1) s[0].scrollTop=s[1]; if(Math.abs(s[0].scrollLeft-s[2])>1) s[0].scrollLeft=s[2]; }); if(Math.abs(window.scrollY-sy)>1) window.scrollTo(sx,sy); }
     function block(e){ var inCard=e.composedPath&&e.composedPath().indexOf(card)>=0; if(inCard&&card.scrollHeight>card.clientHeight+1){
         var dy=e.deltaY||0, top=card.scrollTop<=0, end=card.scrollTop+card.clientHeight>=card.scrollHeight-1;
         if(e.type!=='wheel'||!((dy<0&&top)||(dy>0&&end))) return; }
@@ -276,7 +288,7 @@ class BloomNote extends HTMLElement {
       wrap.classList.remove('open');
       document.removeEventListener('keydown',onKey);
       setTimeout(function(){ host.remove(); self._pop=null; try{src.focus({preventScroll:true})}catch(e){}
-        if(Math.abs(window.scrollY-sy)>1||Math.abs(window.scrollX-sx)>1) window.scrollTo(sx,sy); }, 280);
+        keep(); requestAnimationFrame(keep); }, 280);
     }
     function onKey(e){ if(e.key==='Escape') close(); }
     r.querySelector('.pop-shade').addEventListener('click',close);
@@ -284,7 +296,7 @@ class BloomNote extends HTMLElement {
     document.addEventListener('keydown',onKey);
     document.body.appendChild(host);
     this._pop=host;
-    requestAnimationFrame(function(){ requestAnimationFrame(function(){ wrap.classList.add('open'); }); });
+    keep(); requestAnimationFrame(function(){ keep(); requestAnimationFrame(function(){ keep(); wrap.classList.add('open'); }); }); setTimeout(keep,350);
     try{ r.querySelector('.pop-close').focus({preventScroll:true}); }catch(e){}
   }
 }
@@ -568,6 +580,9 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
 .note:hover{box-shadow:none}
 .note::after{content:"";position:absolute;inset:0;z-index:-1;background:var(--kraft);border-radius:6px;clip-path:polygon(18% 0,82% 0,100% 12%,100% 100%,0 100%,0 12%)}
 .string{position:absolute;top:-50px;left:50%;width:130px;height:78px;margin-left:-30px;pointer-events:none}
+/* the whole tag scales with the box width (corner resizer), text and string included */
+.note{width:300px;margin:0 auto;zoom:var(--z,1)}
+.pop-card .note{zoom:1.15}
 .crumbs-when{font:400 20px/1.2 var(--f-display);color:var(--walnut);margin-top:10px!important}
 [hidden]{display:none!important}
 .note::before{content:"";position:absolute;top:16px;left:50%;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:var(--cream);box-shadow:inset 0 1px 2px rgba(53,38,27,.35)}
@@ -586,7 +601,7 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
   <p id="crumbs-btn" hidden><a class="shop-link" href="https://www.bloomandbake.co/category/all-products" target="_top"><span class="t">first come, first served</span><svg class="arrow" viewBox="0 0 28 14" aria-hidden="true"><path d="M1.5 7.6c6-.9 14-.5 22.5-.4M18.5 2.2c2 1.8 4.2 3.4 6.4 5-2.3 1.3-4.6 2.9-6.6 4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
   <p class="crumbs-when" id="crumbs-when" hidden>opens wed</p>
 </article>
-`; this.applyTilt(); this.initPop(); this.initFit(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applyLink(); this.applyCrumbs();
+`; this.applyTilt(); this.initPop(); this.initFit(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applyLink(); this.applyCrumbs(); this.initScale();
   }
   static get observedAttributes(){ return ['tilt','data-tilt','link','drops','now']; }
   attributeChangedCallback(n){ if(n==='tilt'||n==='data-tilt'){ this.applyTilt(); return; } this.applyLink(); this.applyCrumbs(); }
