@@ -181,6 +181,7 @@ class BloomNote extends HTMLElement {
     var self=this; clearTimeout(this._fitReset); this._fitReset=setTimeout(function(){ self._fitN=0; },800);
   }
   initPop(){
+    if((this.getAttribute('popout')||'').toLowerCase()==='off') return;   /* e.g. inside a Wix lightbox */
     var self=this, notes=this.shadowRoot?this.shadowRoot.querySelectorAll('.note'):[];
     Array.prototype.forEach.call(notes,function(note){
       if(note._bloomPop) return; note._bloomPop=true;
@@ -269,7 +270,7 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
   <p class="date">a note from the kitchen</p>
   <p class="dear">dear neighbour,</p>
   <p>thank you for finding your way to our little corner in peckham. once a month we bake a small batch of good things and cut whatever's blooming, and we'd love for some of it to end up on your table.</p>
-  <p>order by tuesday night, collect at the weekend, and if you'd rather swap than pay, we're always up for a barter.</p>
+  <p>orders close the tuesday before each drop weekend, collect on saturday or sunday, and if you'd rather swap than pay, we're always up for a barter.</p>
   <div class="sign">see you soon,<strong>the bloom &amp; bake crew</strong></div>
 </article>
 `; this.applyTilt(); this.initPop(); this.initFit(); var me=this; setTimeout(function(){me.applyTilt()},300);
@@ -717,6 +718,18 @@ h2{font-size:28px!important;line-height:1.1}
 .postit h2{margin-bottom:8px!important}
 .postit p{font-size:16px}
 .postit .dots{margin-bottom:12px}
+.gallery{display:none}
+.pop-card .gallery{display:block;margin-top:18px}
+.pop-card .see-work{display:none!important}
+.see-work{margin-top:4px}
+.g-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px 18px;margin:6px 0 18px}
+.g-item{position:relative;margin:0;background:#fff;padding:8px 8px 10px;box-shadow:0 10px 18px -12px rgba(53,38,27,.5);transform:rotate(var(--gt,-1.5deg))}
+.g-item:nth-child(even){--gt:1.8deg}
+.g-item img{display:block;width:100%;aspect-ratio:1/1;object-fit:cover;background:var(--cream)}
+.g-item figcaption{font:400 16px/1.25 var(--f-display);color:var(--walnut);text-align:center;margin-top:7px}
+.g-item .tape{width:60px;height:20px;margin-left:-30px;top:-10px}
+.g-grid:has(.g-item:only-child){grid-template-columns:minmax(0,1fr)}
+@container (max-width:480px){.g-grid{grid-template-columns:minmax(0,1fr)}}
 @container (max-width:760px){.postits{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @container (max-width:480px){.postits{grid-template-columns:minmax(0,1fr)}}
 </style>
@@ -746,16 +759,32 @@ h2{font-size:28px!important;line-height:1.1}
     <ul class="dots"><li>a pottery or ceramics lesson</li><li>handmade plates, vases, mugs (anything for the table)</li><li>kitchen time</li></ul>
     <a class="pill-link" href="https://www.bloomandbake.co/proposeabarter" target="_top"><span>how barters work</span><svg viewBox="0 0 28 14" aria-hidden="true"><path d="M1.5 7.6c6-.9 14-.5 22.5-.4M18.5 2.2c2 1.8 4.2 3.4 6.4 5-2.3 1.3-4.6 2.9-6.6 4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
   </article>
-  <article class="note postit" style="--pi:#FDE9B8;--tilt:.6deg">
+  <article class="note postit" id="collabs" style="--pi:#FDE9B8;--tilt:.6deg">
     <h2>collabs</h2>
-    <p>we recently did the florals for a wedding in chicago, and we're always up for more of that. got an idea? hit us up.</p>
+    <p>we love a creative project. we've made bouquets and bakes for celebrations and events. check out our most recent work: the florals for a wedding in chicago.</p>
+    <p>got something in mind? let's make something together.</p>
+    <span class="pill-link see-work" id="see-work" hidden><span>see our work</span><svg viewBox="0 0 28 14" aria-hidden="true"><path d="M1.5 7.6c6-.9 14-.5 22.5-.4M18.5 2.2c2 1.8 4.2 3.4 6.4 5-2.3 1.3-4.6 2.9-6.6 4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    <div class="gallery" id="gallery">
+      <div class="g-grid" id="g-grid"></div>
+      <a class="pill-link" id="collab-link" href="#" target="_top" hidden><span>plan a collab</span><svg viewBox="0 0 28 14" aria-hidden="true"><path d="M1.5 7.6c6-.9 14-.5 22.5-.4M18.5 2.2c2 1.8 4.2 3.4 6.4 5-2.3 1.3-4.6 2.9-6.6 4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+    </div>
   </article>
 </div>
 `; this.applyTilt(); this.initPop(); this.initFit(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applyLink();
   }
-  static get observedAttributes(){ return ['tilt','data-tilt','link']; }
+  static get observedAttributes(){ return ['tilt','data-tilt','link','collab-link','collab-photos','collab-photo']; }
   attributeChangedCallback(n){ if(n==='tilt'||n==='data-tilt'){ this.applyTilt(); return; } this.applyLink(); }
-  applyLink(){ var u=this.getAttribute('link'); var a=this.shadowRoot&&this.shadowRoot.querySelector('.pill-link'); if(u&&a) a.href=u; }
+  /* link: barters button   collab-link: where 'plan a collab' goes (hidden until set)
+     collab-photos: photos for the collabs gallery, as  url | caption ; url | caption  (caption optional) */
+  applyLink(){ var r=this.shadowRoot; if(!r) return; var u=this.getAttribute('link'), a=r.querySelector('.postit:not(#collabs) .pill-link'); if(u&&a) a.href=u;
+    var cl=this.getAttribute('collab-link'), ca=r.getElementById('collab-link'); if(ca){ if(cl){ ca.href=cl; ca.hidden=false; } else ca.hidden=true; }
+    var raw=this.getAttribute('collab-photos')||this.getAttribute('collab-photo')||'', items=[];
+    try{ var j=JSON.parse(raw); if(Array.isArray(j)) items=j.map(function(x){ return typeof x==='string'?{src:x}:{src:x.src||x.url||x.photo,cap:x.caption||x.cap||''}; }); }catch(err){
+      raw.split(/[;\n]+/).forEach(function(s){ s=s.trim(); if(!s) return; var p=s.split('|'); items.push({src:p[0].trim(),cap:(p[1]||'').trim()}); }); }
+    items=items.filter(function(x){ return x&&x.src; });
+    var g=r.getElementById('g-grid'), see=r.getElementById('see-work'); if(!g) return; g.innerHTML='';
+    items.forEach(function(x){ var f=document.createElement('figure'); f.className='g-item'; var t=document.createElement('span'); t.className='tape'+(g.children.length%2?' lilac':''); var im=document.createElement('img'); im.src=x.src; im.alt=x.cap||'our work'; im.loading='lazy'; f.appendChild(t); f.appendChild(im); if(x.cap){ var c=document.createElement('figcaption'); c.textContent=x.cap; f.appendChild(c); } g.appendChild(f); });
+    if(see) see.hidden=!items.length; }
 }
 if(!customElements.get('bloom-about')) customElements.define('bloom-about', BloomAbout);
 
@@ -858,7 +887,7 @@ h2{font-size:28px!important;line-height:1.1}
   <div class="banner">
     <!-- \u270f\ufe0f edit the text below -->
     <p>we don't want price to be a barrier. if you've got something to trade, we're listening. we especially love handmade goods, a lesson and art.</p>
-    <p class="sub">we're also new to this! here's roughly how we're thinking about it, but we're open to ideas.</p>
+    <p class="sub">we're always open to ideas, so don't be shy! here's roughly how we're thinking about it.</p>
   </div>
   <span class="tape corner-tl" aria-hidden="true"></span>
   <span class="tape lilac corner-tr" aria-hidden="true"></span>
