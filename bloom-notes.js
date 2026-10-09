@@ -140,7 +140,7 @@ var BLOOM_X='<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4.5 4.8c3.8 3
 var BLOOM_POP_CSS='.wrap{display:contents}:host{pointer-events:auto!important;position:fixed!important;inset:0!important;z-index:2147483000!important;display:grid!important;place-items:center;padding:calc(env(safe-area-inset-top,0px) + 24px) 16px calc(env(safe-area-inset-bottom,0px) + 24px)!important;box-sizing:border-box}'+
  '.pop-shade{position:fixed;inset:0;background:rgba(53,38,27,.45);opacity:0;transition:opacity .3s}'+
  '.open .pop-shade{opacity:1}'+
- '.pop-card{position:relative;width:min(600px,100%);max-height:100%;overflow:auto;padding:20px 20px 4px 0;box-sizing:border-box;transform:translateY(24px) scale(.92) rotate(var(--tilt,0deg));opacity:0;transition:transform .42s cubic-bezier(.2,.9,.25,1.08),opacity .25s}'+
+ '.pop-card{position:relative;width:min(600px,100%);max-height:100%;overflow:auto;overscroll-behavior:contain;padding:20px 20px 4px 0;box-sizing:border-box;transform:translateY(24px) scale(.92) rotate(var(--tilt,0deg));opacity:0;transition:transform .42s cubic-bezier(.2,.9,.25,1.08),opacity .25s}'+
  '.open .pop-card{transform:none;opacity:1}'+
  '.pop-card .string{display:none}.pop-card .note{max-width:none!important;transform:none!important;cursor:default!important;font-size:19px;box-shadow:0 30px 60px -20px rgba(53,38,27,.6)}'+
  '.pop-card .note:hover{transform:none!important}'+
@@ -213,17 +213,25 @@ class BloomNote extends HTMLElement {
     var clone=src.cloneNode(true); clone.removeAttribute('tabindex'); clone.removeAttribute('role'); clone.style.cursor='';
     r.innerHTML='<style>'+css+BLOOM_POP_CSS+'</style><div class="wrap"><div class="pop-shade"></div><div class="pop-card" role="dialog" aria-modal="true"><button class="pop-close" type="button" aria-label="close">'+BLOOM_X+'</button></div></div>';
     r.querySelector('.pop-card').appendChild(clone);
-    var wrap=r.querySelector('.wrap'), prevOverflow=document.documentElement.style.overflow;
+    /* the page underneath stays exactly where it is: no scroll locking (which makes Wix jump to the top);
+       scrolling is just blocked over the shade, and the spot is restored on close */
+    var wrap=r.querySelector('.wrap'), card=r.querySelector('.pop-card'), sx=window.scrollX, sy=window.scrollY;
+    function block(e){ var inCard=e.composedPath&&e.composedPath().indexOf(card)>=0; if(inCard&&card.scrollHeight>card.clientHeight+1){
+        var dy=e.deltaY||0, top=card.scrollTop<=0, end=card.scrollTop+card.clientHeight>=card.scrollHeight-1;
+        if(e.type!=='wheel'||!((dy<0&&top)||(dy>0&&end))) return; }
+      e.preventDefault(); }
+    host.addEventListener('wheel',block,{passive:false}); host.addEventListener('touchmove',block,{passive:false});
     function close(){
       wrap.classList.remove('open');
       document.removeEventListener('keydown',onKey);
-      setTimeout(function(){ host.remove(); document.documentElement.style.overflow=prevOverflow; self._pop=null; try{src.focus({preventScroll:true})}catch(e){} }, 280);
+      setTimeout(function(){ host.remove(); self._pop=null; try{src.focus({preventScroll:true})}catch(e){}
+        if(Math.abs(window.scrollY-sy)>1||Math.abs(window.scrollX-sx)>1) window.scrollTo(sx,sy); }, 280);
     }
     function onKey(e){ if(e.key==='Escape') close(); }
     r.querySelector('.pop-shade').addEventListener('click',close);
     r.querySelector('.pop-close').addEventListener('click',close);
     document.addEventListener('keydown',onKey);
-    document.body.appendChild(host); document.documentElement.style.overflow='hidden';
+    document.body.appendChild(host);
     this._pop=host;
     requestAnimationFrame(function(){ requestAnimationFrame(function(){ wrap.classList.add('open'); }); });
     try{ r.querySelector('.pop-close').focus({preventScroll:true}); }catch(e){}
