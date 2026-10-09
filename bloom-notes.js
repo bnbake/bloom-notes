@@ -127,6 +127,7 @@ function bloomShowDrop(root, dates, now){
 
 /* one shared layout pass per frame: every note/doodle is measured first, then all are updated,
    so the page is only re-laid-out once instead of once per element (faster loading) */
+var BLOOM_DW={'bloom-letter':520,'bloom-drops':380,'bloom-deadline':320,'bloom-deadline-popup':320,'bloom-crumbs':300,'bloom-barter':460,'bloom-polaroid':280,'bloom-ps':600,'bloom-barter-intro':600,'bloom-good-to-know':380};
 var bloomQ=[], bloomRaf=0;
 function bloomSchedule(el){ if(bloomQ.indexOf(el)<0) bloomQ.push(el); if(!bloomRaf) bloomRaf=requestAnimationFrame(bloomFlush); }
 function bloomFlush(){ bloomRaf=0; var q=bloomQ; bloomQ=[];
@@ -168,16 +169,41 @@ class BloomNote extends HTMLElement {
       var main=this.shadowRoot&&this.shadowRoot.querySelector('.note,.banner-wrap'); if(main) this._fitRO.observe(main); }
     if(document.fonts&&document.fonts.ready) document.fonts.ready.then(run);
     setTimeout(run,60); setTimeout(run,600);
+    this.initScale();
   }
   fitBox(){ bloomSchedule(this); }
-  /* scale a fixed-design note (e.g. the crumbs tag) to the width of its Wix box */
+  /* every single-card element keeps its designed layout and scales to its Wix box:
+     drag the width and it grows/shrinks; if the box has a fixed height, it also shrinks to fit that.
+     design-width="..." changes the layout width, scale="off" turns it off */
   initScale(){
-    var self=this; if(this._scaleOn) return; this._scaleOn=true;
-    var go=function(){ var w=self.getBoundingClientRect().width; if(!w) return;
-      var z=Math.max(0.4,Math.min(1.4,(w-52)/300)); z=Math.round(z*100)/100;
-      if(String(z)!==self.style.getPropertyValue('--z')){ self.style.setProperty('--z',z); self._fitN=0; bloomSchedule(self); } };
-    if('ResizeObserver' in window) new ResizeObserver(function(){ requestAnimationFrame(go); }).observe(this);
+    var self=this; if(this._scaleOn) return;
+    var dw=parseFloat(this.getAttribute('design-width'))||BLOOM_DW[this.tagName.toLowerCase()];
+    if(!dw||(this.getAttribute('scale')||'').toLowerCase()==='off') return;
+    var r=this.shadowRoot, main=r&&r.querySelector('.banner-wrap,.note'); if(!main) return;
+    this._scaleOn=true; this._dw=dw; this._scaleMain=main;
+    var st=r.querySelector('style'); st.textContent+=':host([data-scaled]){box-sizing:border-box}:host([data-scaled]) .note,:host([data-scaled]) .banner-wrap{width:var(--dw)!important;max-width:none!important;margin-left:auto!important;margin-right:auto!important;zoom:var(--z,1);container-type:inline-size}';
+    this.style.setProperty('--dw',dw+'px'); this.setAttribute('data-scaled','');
+    var raf=0, go=function(){ if(raf) return; raf=requestAnimationFrame(function(){ raf=0; self._probeBox(); self._scaleGo(); }); };
+    if('ResizeObserver' in window){ var ro=new ResizeObserver(go); ro.observe(this); if(this.parentElement) ro.observe(this.parentElement); }
+    if(document.fonts&&document.fonts.ready) document.fonts.ready.then(go);
     go();
+  }
+  /* does the Wix box have a fixed height (so we should fit inside it) or does it grow with the content? */
+  _probeBox(){
+    var r=this.shadowRoot, p=this.parentElement, d=document.createElement('div');
+    d.style.cssText='display:block;height:240px;width:1px;pointer-events:none';
+    var h1=this.offsetHeight, p1=p?p.offsetHeight:0; r.appendChild(d);
+    var h2=this.offsetHeight, p2=p?p.offsetHeight:0; d.remove();
+    this._fixedBox = Math.abs(h2-h1)<2 ? this : (p && p1>0 && Math.abs(p2-p1)<2 ? p : null);
+  }
+  _scaleGo(){
+    var hb=this.getBoundingClientRect(); if(!hb.width) return;
+    var cs=getComputedStyle(this), pl=parseFloat(cs.paddingLeft)||0, pr=parseFloat(cs.paddingRight)||0, pt=parseFloat(cs.paddingTop)||0, pb=parseFloat(cs.paddingBottom)||0;
+    var z0=parseFloat(this.style.getPropertyValue('--z'))||1, z=(hb.width-pl-pr)/this._dw;
+    var fb=this._fixedBox;
+    if(fb){ var avail=(fb===this?this.clientHeight:fb.clientHeight)-pt-pb, mh=this._scaleMain.getBoundingClientRect().height/z0; if(mh>0&&avail>0) z=Math.min(z,avail/mh); }
+    z=Math.round(Math.max(0.2,Math.min(1.5,z))*100)/100;
+    if(Math.abs(z-z0)>=0.01||!this.style.getPropertyValue('--z')){ this.style.setProperty('--z',z); this._fitN=0; bloomSchedule(this); }
   }
   _measure(){
     if(!this._fitOn) return null;
@@ -526,9 +552,6 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
 .note:hover{box-shadow:none}
 .note::after{content:"";position:absolute;inset:0;z-index:-1;background:var(--kraft);border-radius:6px;clip-path:polygon(18% 0,82% 0,100% 12%,100% 100%,0 100%,0 12%)}
 .string{position:absolute;top:-50px;left:50%;width:130px;height:78px;margin-left:-30px;pointer-events:none}
-/* the whole tag scales with the box width (corner resizer), text and string included */
-.note{width:300px;margin:0 auto;zoom:var(--z,1)}
-.pop-card .note{zoom:1.15}
 .crumbs-when{font:400 20px/1.2 var(--f-display);color:var(--walnut);margin-top:10px!important}
 [hidden]{display:none!important}
 .note::before{content:"";position:absolute;top:16px;left:50%;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:var(--cream);box-shadow:inset 0 1px 2px rgba(53,38,27,.35)}
@@ -547,7 +570,7 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
   <p id="crumbs-btn" hidden><a class="shop-link" href="https://www.bloomandbake.co/category/all-products" target="_top"><span class="t">first come, first served</span><svg class="arrow" viewBox="0 0 28 14" aria-hidden="true"><path d="M1.5 7.6c6-.9 14-.5 22.5-.4M18.5 2.2c2 1.8 4.2 3.4 6.4 5-2.3 1.3-4.6 2.9-6.6 4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></p>
   <p class="crumbs-when" id="crumbs-when" hidden>opens wed</p>
 </article>
-`; this.applyTilt(); this.initPop(); this.initFit(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applyLink(); this.applyCrumbs(); this.initScale();
+`; this.applyTilt(); this.initPop(); this.initFit(); var me=this; setTimeout(function(){me.applyTilt()},300); this.applyLink(); this.applyCrumbs();
   }
   static get observedAttributes(){ return ['tilt','data-tilt','link','drops','now']; }
   attributeChangedCallback(n){ if(n==='tilt'||n==='data-tilt'){ this.applyTilt(); return; } this.applyLink(); this.applyCrumbs(); }
