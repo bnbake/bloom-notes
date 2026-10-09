@@ -124,6 +124,15 @@ function bloomShowDrop(root, dates, now){
 }
 
 
+
+/* one shared layout pass per frame: every note/doodle is measured first, then all are updated,
+   so the page is only re-laid-out once instead of once per element (faster loading) */
+var bloomQ=[], bloomRaf=0;
+function bloomSchedule(el){ if(bloomQ.indexOf(el)<0) bloomQ.push(el); if(!bloomRaf) bloomRaf=requestAnimationFrame(bloomFlush); }
+function bloomFlush(){ bloomRaf=0; var q=bloomQ; bloomQ=[];
+  q.forEach(function(e){ if(e._prep) e._prep(); });
+  var m=q.map(function(e){ return e._measure ? e._measure() : null; });
+  q.forEach(function(e,i){ if(e._apply) e._apply(m[i]); }); }
 /* shared by every note:
    - an optional "tilt" attribute, e.g. -2deg or 0deg
    - tap/click a note to open it large in the middle of the screen (set popout="off" to turn this off) */
@@ -148,33 +157,38 @@ class BloomNote extends HTMLElement {
     this.style.setProperty('--tilt', t);
     var n=this.shadowRoot&&this.shadowRoot.querySelector('.note'); if(n) n.style.setProperty('--tilt', t);
     this._tilt=t;
-    if(this._relayout) this._relayout();
+    if(this._relayout) bloomSchedule(this);
   }
   /* keeps the element's box snug: padding grows just enough for the tilt, tape, strings and shadow,
      and is re-measured whenever the box is resized or the content changes */
   initFit(){
     var self=this; if(this._fitOn||(this.getAttribute('fit')||'').toLowerCase()==='off') return; this._fitOn=true;
-    var run=function(){ if(self._fitRaf) return; self._fitRaf=requestAnimationFrame(function(){ self._fitRaf=0; self.fitBox(); }); };
+    var run=function(){ bloomSchedule(self); };
     if('ResizeObserver' in window){ this._fitRO=new ResizeObserver(run); this._fitRO.observe(this);
       var main=this.shadowRoot&&this.shadowRoot.querySelector('.note,.banner-wrap'); if(main) this._fitRO.observe(main); }
     if(document.fonts&&document.fonts.ready) document.fonts.ready.then(run);
     setTimeout(run,60); setTimeout(run,600);
   }
-  fitBox(){
-    var r=this.shadowRoot; if(!r) return;
-    var parts=r.querySelectorAll('.note,.banner-wrap,.note *,.banner-wrap *'); if(!parts.length) return;
+  fitBox(){ bloomSchedule(this); }
+  _measure(){
+    if(!this._fitOn) return null;
+    var r=this.shadowRoot; if(!r) return null;
+    var parts=r.querySelectorAll('.note,.banner-wrap,.note *,.banner-wrap *'); if(!parts.length) return null;
     var hb=this.getBoundingClientRect(), cs=getComputedStyle(this);
     var P={l:parseFloat(cs.paddingLeft)||0,t:parseFloat(cs.paddingTop)||0,r:parseFloat(cs.paddingRight)||0,b:parseFloat(cs.paddingBottom)||0};
     var box={l:hb.left+P.l,t:hb.top+P.t,r:hb.right-P.r,b:hb.bottom-P.b};
     var U={l:Infinity,t:Infinity,r:-Infinity,b:-Infinity};
     for(var i=0;i<parts.length;i++){ var e=parts[i]; if(e.closest&&e.closest('[hidden]')) continue; var q=e.getBoundingClientRect(); if(!q.width&&!q.height) continue;
       if(q.left<U.l)U.l=q.left; if(q.top<U.t)U.t=q.top; if(q.right>U.r)U.r=q.right; if(q.bottom>U.b)U.b=q.bottom; }
-    if(U.l===Infinity) return;
+    if(U.l===Infinity) return null;
     /* room for the soft shadow and the little lift on hover */
     var need={l:Math.max(0,box.l-U.l)+8, t:Math.max(0,box.t-U.t)+8, r:Math.max(0,U.r-box.r)+8, b:Math.max(0,U.b-box.b)+16};
     var changed=false;
     ['l','t','r','b'].forEach(function(k){ need[k]=Math.ceil(need[k]); if(Math.abs(need[k]-P[k])>1) changed=true; });
-    if(!changed) return;
+    return changed ? need : null;
+  }
+  _apply(need){
+    if(!need) return;
     this._fitN=(this._fitN||0)+1; if(this._fitN>6) return;
     this.style.setProperty('padding-left',need.l+'px','important'); this.style.setProperty('padding-right',need.r+'px','important');
     this.style.setProperty('padding-top',need.t+'px','important'); this.style.setProperty('padding-bottom',need.b+'px','important');
@@ -1182,9 +1196,9 @@ path{fill:none;stroke:currentColor;stroke-width:var(--w,3);stroke-linecap:round;
       else { var y1=H*0.38, y2=H*0.72; out='M'+pad+' '+y1+'C'+(L*0.3)+' '+(y1-2)+' '+(L*0.7)+' '+(y1-3)+' '+(L-pad)+' '+(y1+1)+'M'+(L*0.08)+' '+y2+'C'+(L*0.35)+' '+(y2-2)+' '+(L*0.65)+' '+(y2-2)+' '+(L*0.9)+' '+y2; }
       return out;
     }
-    function layout(){
+    function layout(b){
       var deg=parseFloat(self._tilt||self.getAttribute('tilt')||0)||0, th=deg*Math.PI/180, cs=Math.abs(Math.cos(th)), sn=Math.abs(Math.sin(th));
-      self.style.height=''; var b=self.getBoundingClientRect(); var BW=Math.max(20,b.width), BH=b.height, auto=!(BH>8);
+      var BW=Math.max(20,b.width), BH=b.height, auto=!(BH>8);
       var vw,vh;
       if(DIV){
         var H=parseFloat(self.getAttribute('size'))||(auto||BH>400 ? (s==='loops'?36:22) : null);
@@ -1202,8 +1216,8 @@ path{fill:none;stroke:currentColor;stroke-width:var(--w,3);stroke-linecap:round;
       svg.style.width=vw+'px'; svg.style.height=vh+'px';
       svg.style.transform='translate(-50%,-50%) rotate('+deg+'deg)';
     }
-    this._relayout=layout; layout();
-    if(!this._ro&&'ResizeObserver' in window){ var last=''; this._ro=new ResizeObserver(function(){ var b=self.getBoundingClientRect(), k=Math.round(b.width)+'x'+(self.style.height?'a':Math.round(b.height)); if(k!==last){ last=k; layout(); } }); this._ro.observe(this); }
+    this._relayout=layout; this._prep=function(){ self.style.height=''; }; this._measure=function(){ return self.getBoundingClientRect(); }; this._apply=function(b){ layout(b); }; bloomSchedule(this);
+    if(!this._ro&&'ResizeObserver' in window){ var last=''; this._ro=new ResizeObserver(function(en){ var b=en[0].contentRect, k=Math.round(b.width)+'x'+(self.style.height?'a':Math.round(b.height)); if(k!==last){ last=k; bloomSchedule(self); } }); this._ro.observe(this); }
     if((this.getAttribute('animate')||'').toLowerCase()==='draw' && !this._drawn){
       this._drawn=true; var len=Math.ceil(p.getTotalLength?p.getTotalLength():600)+10;
       svg.style.setProperty('--len',len); svg.classList.add('draw');
