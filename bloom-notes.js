@@ -838,7 +838,7 @@ h2{font-size:28px!important;line-height:1.1}
   <article class="note postit" style="--pi:#DFE8D2;--tilt:1deg">
     <h2>where &amp; when</h2>
     <p>peckham rye.</p>
-    <p>once a month. weekend pickup, order by the thursday before.</p>
+    <p>once a month. weekend pickup, order by the tuesday before.</p>
   </article>
   <article class="note postit" style="--pi:#F7DCDD;--tilt:-.8deg">
     <h2>barters</h2>
