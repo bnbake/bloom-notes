@@ -234,10 +234,11 @@ class BloomNote extends HTMLElement {
       if(q.left<U.l)U.l=q.left; if(q.top<U.t)U.t=q.top; if(q.right>U.r)U.r=q.right; if(q.bottom>U.b)U.b=q.bottom; }
     if(U.l===Infinity) return null;
     /* room for the soft shadow and the little lift on hover */
-    var need={l:Math.max(0,box.l-U.l)+8, t:Math.max(0,box.t-U.t)+8, r:Math.max(0,U.r-box.r)+8, b:Math.max(0,U.b-box.b)+16};
+    /* just enough room for the tilt, tape and string, plus a hair for the shadow: no extra space around the note */
+    var need={l:Math.max(0,box.l-U.l)+2, t:Math.max(0,box.t-U.t)+2, r:Math.max(0,U.r-box.r)+2, b:Math.max(0,U.b-box.b)+4};
     if(this._fillOn){ /* box height is set by Wix: bottom room only for the tilt, never for the text */
       var tl=String(this._tilt||getComputedStyle(this._fillMain).getPropertyValue('--tilt')||'0'), dg=parseFloat(tl)||0; if(/rad/.test(tl)) dg=dg*180/Math.PI; if(/turn/.test(tl)) dg=dg*360;
-      need.b=Math.abs(Math.sin(dg*Math.PI/180))*hb.width/2+16; }
+      need.b=Math.abs(Math.sin(dg*Math.PI/180))*hb.width/2+4; }
     var changed=false;
     ['l','t','r','b'].forEach(function(k){ need[k]=Math.ceil(need[k]); if(Math.abs(need[k]-P[k])>1) changed=true; });
     return changed ? need : null;
@@ -540,42 +541,6 @@ if(!customElements.get('bloom-deadline')) customElements.define('bloom-deadline'
 /* bloom-deadline-popup: same card for a Wix lightbox, no tap-to-expand (the lightbox has its own close) */
 class BloomDeadlinePopup extends BloomDeadline { connectedCallback(){ this.setAttribute('popout','off'); super.connectedCallback(); } }
 if(!customElements.get('bloom-deadline-popup')) customElements.define('bloom-deadline-popup', BloomDeadlinePopup);
-
-/* ===================== bloom-stack =====================
-   one element that holds several notes in a tidy column, for the MOBILE breakpoint:
-   hide the separate elements on mobile, show this one instead (hide it on desktop/tablet).
-     items  = which notes, top to bottom, separated by ;   e.g.  barter-intro ; tiers ; text:fancy a swap? ; good-to-know
-              (use the tag name without "bloom-", or text:... for a handwritten heading)
-     gap    = space between notes in px (default 8)
-     <note>-<attribute> passes an attribute to one note, e.g.  howto-photo = https://...   crumbs-drops = [...] */
-class BloomStack extends BloomNote {
-  connectedCallback(){
-    if(this.shadowRoot) return;
-    var r=this.attachShadow({mode:'open'});
-    r.innerHTML='<style>:host{display:block;pointer-events:none}*{box-sizing:border-box}'
-      +'.stack{display:flex;flex-direction:column;gap:var(--gap,8px)}'
-      +'.stack>*{pointer-events:none}'
-      +'h2{pointer-events:auto;margin:0;padding:4px 22px;font:400 clamp(30px,8vw,40px)/1.1 "Jnr","Gaegu",cursive;color:#35261B;text-align:center}</style><div class="stack"></div>';
-    var self=this; this.render();
-    new MutationObserver(function(ms){ var full=false; ms.forEach(function(m){ if(m.attributeName==='items') full=true; });
-      if(full) self.render(); else self.pass(); }).observe(this,{attributes:true});
-  }
-  render(){
-    var box=this.shadowRoot.querySelector('.stack'); box.innerHTML='';
-    var g=parseFloat(this.getAttribute('gap')); if(!isNaN(g)) box.style.setProperty('--gap',g+'px');
-    (this.getAttribute('items')||'').split(/[;\n]+/).forEach(function(s){ s=s.trim(); if(!s) return;
-      if(/^text:/i.test(s)){ var h=document.createElement('h2'); h.textContent=s.replace(/^text:/i,'').trim(); box.appendChild(h); return; }
-      var tag=s.toLowerCase().replace(/^bloom-/,''); var el=document.createElement('bloom-'+tag); el.setAttribute('data-key',tag); box.appendChild(el); });
-    this.pass();
-  }
-  pass(){
-    var kids=this.shadowRoot.querySelectorAll('[data-key]'), at=this.attributes;
-    Array.prototype.forEach.call(kids,function(el){ var k=el.getAttribute('data-key')+'-';
-      for(var i=0;i<at.length;i++){ var n=at[i].name; if(n.indexOf(k)===0){ var a=n.slice(k.length); if(el.getAttribute(a)!==at[i].value) el.setAttribute(a,at[i].value); } } });
-    var g=parseFloat(this.getAttribute('gap')), box=this.shadowRoot.querySelector('.stack'); if(!isNaN(g)) box.style.setProperty('--gap',g+'px');
-  }
-}
-if(!customElements.get('bloom-stack')) customElements.define('bloom-stack', BloomStack);
 
 /* ===================== bloom-crumbs ===================== */
 class BloomCrumbs extends BloomNote {
