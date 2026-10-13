@@ -541,6 +541,42 @@ if(!customElements.get('bloom-deadline')) customElements.define('bloom-deadline'
 class BloomDeadlinePopup extends BloomDeadline { connectedCallback(){ this.setAttribute('popout','off'); super.connectedCallback(); } }
 if(!customElements.get('bloom-deadline-popup')) customElements.define('bloom-deadline-popup', BloomDeadlinePopup);
 
+/* ===================== bloom-stack =====================
+   one element that holds several notes in a tidy column, for the MOBILE breakpoint:
+   hide the separate elements on mobile, show this one instead (hide it on desktop/tablet).
+     items  = which notes, top to bottom, separated by ;   e.g.  barter-intro ; tiers ; text:fancy a swap? ; good-to-know
+              (use the tag name without "bloom-", or text:... for a handwritten heading)
+     gap    = space between notes in px (default 8)
+     <note>-<attribute> passes an attribute to one note, e.g.  howto-photo = https://...   crumbs-drops = [...] */
+class BloomStack extends BloomNote {
+  connectedCallback(){
+    if(this.shadowRoot) return;
+    var r=this.attachShadow({mode:'open'});
+    r.innerHTML='<style>:host{display:block;pointer-events:none}*{box-sizing:border-box}'
+      +'.stack{display:flex;flex-direction:column;gap:var(--gap,8px)}'
+      +'.stack>*{pointer-events:none}'
+      +'h2{pointer-events:auto;margin:0;padding:4px 22px;font:400 clamp(30px,8vw,40px)/1.1 "Jnr","Gaegu",cursive;color:#35261B;text-align:center}</style><div class="stack"></div>';
+    var self=this; this.render();
+    new MutationObserver(function(ms){ var full=false; ms.forEach(function(m){ if(m.attributeName==='items') full=true; });
+      if(full) self.render(); else self.pass(); }).observe(this,{attributes:true});
+  }
+  render(){
+    var box=this.shadowRoot.querySelector('.stack'); box.innerHTML='';
+    var g=parseFloat(this.getAttribute('gap')); if(!isNaN(g)) box.style.setProperty('--gap',g+'px');
+    (this.getAttribute('items')||'').split(/[;\n]+/).forEach(function(s){ s=s.trim(); if(!s) return;
+      if(/^text:/i.test(s)){ var h=document.createElement('h2'); h.textContent=s.replace(/^text:/i,'').trim(); box.appendChild(h); return; }
+      var tag=s.toLowerCase().replace(/^bloom-/,''); var el=document.createElement('bloom-'+tag); el.setAttribute('data-key',tag); box.appendChild(el); });
+    this.pass();
+  }
+  pass(){
+    var kids=this.shadowRoot.querySelectorAll('[data-key]'), at=this.attributes;
+    Array.prototype.forEach.call(kids,function(el){ var k=el.getAttribute('data-key')+'-';
+      for(var i=0;i<at.length;i++){ var n=at[i].name; if(n.indexOf(k)===0){ var a=n.slice(k.length); if(el.getAttribute(a)!==at[i].value) el.setAttribute(a,at[i].value); } } });
+    var g=parseFloat(this.getAttribute('gap')), box=this.shadowRoot.querySelector('.stack'); if(!isNaN(g)) box.style.setProperty('--gap',g+'px');
+  }
+}
+if(!customElements.get('bloom-stack')) customElements.define('bloom-stack', BloomStack);
+
 /* ===================== bloom-crumbs ===================== */
 class BloomCrumbs extends BloomNote {
   connectedCallback(){
@@ -838,7 +874,7 @@ h2{font-size:28px!important;line-height:1.1}
   <article class="note postit" style="--pi:#DFE8D2;--tilt:1deg">
     <h2>where &amp; when</h2>
     <p>peckham rye.</p>
-    <p>once a month. weekend pickup, order by the tuesday before.</p>
+    <p>once a month. weekend pickup, order by the thursday before.</p>
   </article>
   <article class="note postit" style="--pi:#F7DCDD;--tilt:-.8deg">
     <h2>barters</h2>
