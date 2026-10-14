@@ -407,9 +407,9 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
     im.src=v||BLOOM_LOGO; im.hidden=false; tx.hidden=true; this.applyLaunch(); }
   /* launch="on" adds a p.s. under the sign-off; launch-text changes what it says */
   applyLaunch(){ var r=this.shadowRoot, ps=r&&r.getElementById('launch-ps'); if(!ps) return;
-    var la=(this.getAttribute('launch')||'').toLowerCase(), on=la?/^(on|yes|true)$/.test(la):bloomLaunchOn(); ps.hidden=!on;
+    var la=(this.getAttribute('launch')||'').toLowerCase(), on=la?/^(on|yes|true)$/.test(la):bloomLaunchOn(); ps.hidden=!(la&&on&&this.getAttribute('launch-text'));
     var op=r.getElementById('orders-para'); if(op){ if(!this._opText) this._opText=op.textContent;
-      op.textContent=on?"our very first drop is on its way. orders close the wednesday before, collect on the saturday, and if you'd rather swap than pay, we're always up for a barter.":this._opText; }
+      op.textContent=on?"our very first drop is on its way, and thank you for being one of the first. orders close the wednesday before, collect on the saturday, and if you'd rather swap than pay, we're always up for a barter.":this._opText; }
     ps.textContent='p.s. '+(this.getAttribute('launch-text')||"we're brand new and still finding our feet. thank you for being one of the first.").replace(/^p\.?s\.?\s*/i,''); }
 }
 if(!customElements.get('bloom-letter')) customElements.define('bloom-letter', BloomLetter);
