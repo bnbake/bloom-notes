@@ -30,6 +30,18 @@ var BLOOM_LAUNCH={ until:'2026-10-25', closeDay:'wednesday' };
 function bloomLaunchEnd(){ if(!BLOOM_LAUNCH||!BLOOM_LAUNCH.until) return null; var p=String(BLOOM_LAUNCH.until).split('-').map(Number); return p.length===3?new Date(p[0],p[1]-1,p[2],23,59,59):null; }
 function bloomLaunchOn(now){ var e=bloomLaunchEnd(); return !!e && (now||new Date())<=e; }
 function bloomLaunchDrop(sat){ var e=bloomLaunchEnd(); return !!e && sat<=e; }
+/* "today", "tomorrow", "this wednesday", "next wednesday", or "wednesday 4 nov" for further out */
+function bloomRelDay(day, now){
+  now=now||new Date(); var DN=['sunday','monday','tuesday','wednesday','thursday','friday','saturday'], MN=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+  var a=new Date(now.getFullYear(),now.getMonth(),now.getDate()), b=new Date(day.getFullYear(),day.getMonth(),day.getDate()), diff=Math.round((b-a)/864e5);
+  if(diff===0) return 'today'; if(diff===1) return 'tomorrow';
+  var wk=function(x){ var m=new Date(x); m.setDate(m.getDate()-((m.getDay()+6)%7)); return m.getTime(); };
+  if(diff>0&&wk(b)===wk(a)) return 'this '+DN[b.getDay()];
+  if(diff>0&&wk(b)-wk(a)===7*864e5) return 'next '+DN[b.getDay()];
+  return DN[b.getDay()]+' '+b.getDate()+' '+MN[b.getMonth()];
+}
+/* the soft launch pickup saturday and order deadline (from the 'until' date) */
+function bloomLaunchDates(){ var e=bloomLaunchEnd(); if(!e) return null; var sat=new Date(e.getFullYear(),e.getMonth(),e.getDate()-((e.getDay()+1)%7)); var close=new Date(sat.getFullYear(),sat.getMonth(),sat.getDate()-bloomLaunchBack()); return {sat:sat, close:close}; }
 function bloomLaunchBack(){ var i=['sunday','monday','tuesday','wednesday','thursday','friday','saturday'].indexOf(String(BLOOM_LAUNCH&&BLOOM_LAUNCH.closeDay||'tuesday').toLowerCase()); return i<0?4:(6-i); }   /* days before saturday */
 /* works out what the deadline note should say from a list of pickup dates.
    each date = the saturday of a pickup weekend ("2026-10-17" or a Date).
@@ -409,7 +421,8 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
   applyLaunch(){ var r=this.shadowRoot, ps=r&&r.getElementById('launch-ps'); if(!ps) return;
     var la=(this.getAttribute('launch')||'').toLowerCase(), on=la?/^(on|yes|true)$/.test(la):bloomLaunchOn(); ps.hidden=!(la&&on&&this.getAttribute('launch-text'));
     var op=r.getElementById('orders-para'); if(op){ if(!this._opText) this._opText=op.textContent;
-      op.textContent=on?"our very first drop is on its way, and thank you for being one of the first. orders close the wednesday before, collect on the saturday, and if you'd rather swap than pay, we're always up for a barter.":this._opText; }
+      var ld=bloomLaunchDates(), cl=ld?bloomRelDay(ld.close):'the wednesday before', pu=ld?bloomRelDay(ld.sat):'on the saturday';
+      op.textContent=on?"our very first drop is on its way, and thank you for being one of the first. "+(ld&&new Date()>new Date(ld.close.getFullYear(),ld.close.getMonth(),ld.close.getDate(),21)?"orders are closed now":"orders close "+cl)+", pick up "+pu+", and if you'd rather swap than pay, we're always up for a barter.":this._opText; }
     ps.textContent='p.s. '+(this.getAttribute('launch-text')||"we're brand new and still finding our feet. thank you for being one of the first.").replace(/^p\.?s\.?\s*/i,''); }
 }
 if(!customElements.get('bloom-letter')) customElements.define('bloom-letter', BloomLetter);
