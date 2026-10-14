@@ -214,7 +214,7 @@ class BloomNote extends HTMLElement {
   initScale(){
     var self=this; if(this._scaleOn) return; this._scaleOn=true;
     var go=function(){ var w=self.getBoundingClientRect().width; if(!w) return;
-      var z0=parseFloat(self.style.getPropertyValue('--z'))||1, z=(w-52)/250;
+      var z0=parseFloat(self.style.getPropertyValue('--z'))||1, z=(w-52)/340;
       var b=self._boxRoom(go), zh=Infinity; if(b&&b.fixed&&b.content>0){ zh=z0*b.avail/b.content*0.98; z=Math.min(z,zh); }   /* corner drag: fit the height too */
       z=Math.max(0.25,Math.min(1.4,z)); z=Math.round(z*100)/100;
       if(String(z)!==self.style.getPropertyValue('--z')){ if(b&&z<z0&&z<=zh+0.01) self._shrinkAvail=b.avail; self.style.setProperty('--z',z); self._fitN=0; bloomSchedule(self); } };
@@ -740,8 +740,8 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
 .note::after{content:"";position:absolute;inset:0;z-index:-1;background:var(--kraft);border-radius:6px;clip-path:polygon(18% 0,82% 0,100% 12%,100% 100%,0 100%,0 12%)}
 .string{position:absolute;top:-50px;left:50%;width:130px;height:78px;margin-left:-30px;pointer-events:none}
 /* the whole tag scales with the box width (corner resizer), text and string included */
-.note{width:250px;margin:0 auto;zoom:var(--z,1)}
-.note p{font-size:20px;line-height:1.6}
+.note{width:340px;margin:0 auto;zoom:var(--z,1)}
+.note p{font-size:19px;line-height:1.55}
 .note h2{font-size:32px!important}
 .note .shop-link{font-size:16px}
 .pop-card .note{zoom:1.15}
@@ -1017,7 +1017,7 @@ h2{font-size:28px!important;line-height:1.1}
   <article class="note postit" id="collabs" style="--pi:#FDE9B8;--tilt:.6deg">
     <h2>collabs</h2>
     <p>we love a creative project. we've made bouquets and bakes for celebrations and events. check out our most recent work: the florals for a wedding in chicago.</p>
-    <p>got something in mind? let's make something together.</p>
+    <p>got something in mind? let's make memories together.</p>
     <span class="pill-link see-work" id="see-work" hidden><span>see our work</span><svg viewBox="0 0 28 14" aria-hidden="true"><path d="M1.5 7.6c6-.9 14-.5 22.5-.4M18.5 2.2c2 1.8 4.2 3.4 6.4 5-2.3 1.3-4.6 2.9-6.6 4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
     <div class="gallery" id="gallery">
       <div class="g-grid" id="g-grid"></div>
