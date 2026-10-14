@@ -133,7 +133,8 @@ var BLOOM_COLLAB_W='/v1/fit/w_900,h_900,q_80/photo.webp';   /* asks Wix for a sm
 var BLOOM_COLLAB_PHOTOS=[
   'https://static.wixstatic.com/media/8bf26a_35660b2a7ed94398818a65c063009630~mv2.png'+BLOOM_COLLAB_W+' | wedding florals',
   'https://static.wixstatic.com/media/8bf26a_f20047fb4bd141b7aca540e2405944ed~mv2.png'+BLOOM_COLLAB_W+' | table settings',
-  'https://static.wixstatic.com/media/8bf26a_df6853437f1f4b58a3977f4ce216e963~mv2.png'+BLOOM_COLLAB_W+' | farewell party'
+  'https://static.wixstatic.com/media/8bf26a_df6853437f1f4b58a3977f4ce216e963~mv2.png'+BLOOM_COLLAB_W+' | farewell party',
+  'https://static.wixstatic.com/media/8bf26a_9862a10094b54326b7672b5471fa489e~mv2.jpg'+BLOOM_COLLAB_W+' | birthday party'
 ].join(' ; ');
 try{ console.log('bloom-notes loaded (version 9 oct, with collabs gallery)'); }catch(e){}
 var BLOOM_FILL={'bloom-letter':1,'bloom-drops':1,'bloom-deadline':1,'bloom-deadline-popup':1,'bloom-barter':1,'bloom-ps':1,'bloom-barter-intro':1,'bloom-good-to-know':1};
