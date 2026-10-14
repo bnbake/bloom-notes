@@ -1007,7 +1007,7 @@ h2{font-size:28px!important;line-height:1.1}
   <article class="note postit" id="collabs" style="--pi:#FDE9B8;--tilt:.6deg">
     <h2>collabs</h2>
     <p>we love a creative project. we've made bouquets and bakes for celebrations and events. check out our most recent work: the florals for a wedding in chicago.</p>
-    <p>got something in mind? let's make something together.</p>
+    <p>got something in mind? let's make memories together.</p>
     <span class="pill-link see-work" id="see-work" hidden><span>see our work</span><svg viewBox="0 0 28 14" aria-hidden="true"><path d="M1.5 7.6c6-.9 14-.5 22.5-.4M18.5 2.2c2 1.8 4.2 3.4 6.4 5-2.3 1.3-4.6 2.9-6.6 4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
     <div class="gallery" id="gallery">
       <div class="g-grid" id="g-grid"></div>
