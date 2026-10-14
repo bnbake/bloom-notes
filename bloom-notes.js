@@ -375,7 +375,7 @@ p{margin:0 0 12px} p:last-child{margin-bottom:0}
 <article class="note">
   <span class="tape tape-lilac" aria-hidden="true"></span>
   <!-- \u270f\ufe0f edit the text below -->
-  <p class="date">a note from the kitchen</p>
+  <p class="date">a note from us</p>
   <p class="dear">dear neighbour,</p>
   <p>thank you for finding your way to our little corner in peckham. once a month we bake a small batch of good things and cut whatever's blooming, and we'd love for some of it to end up on your table.</p>
   <p>orders close the tuesday before each drop weekend, collect on saturday or sunday, and if you'd rather swap than pay, we're always up for a barter.</p>
